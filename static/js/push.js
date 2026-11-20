@@ -27,16 +27,14 @@ async function isPushSupported() {
     return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
 }
 
+// SW kelias NEPAKEISTAS – /static/js/sw.js
 async function getRegistration() {
-    // SW registruojamas iš šaknies (/sw.js), kad scope apimtų visą svetainę
-    const existing = await navigator.serviceWorker.getRegistration('/');
-    if (existing) return existing;
-    return await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    return await navigator.serviceWorker.register('/static/js/sw.js');
 }
 
 async function getExistingSubscription() {
     try {
-        const reg = await navigator.serviceWorker.getRegistration('/');
+        const reg = await navigator.serviceWorker.getRegistration('/static/js/sw.js');
         if (!reg) return null;
         return await reg.pushManager.getSubscription();
     } catch (e) { return null; }

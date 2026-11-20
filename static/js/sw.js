@@ -1,23 +1,8 @@
-// Service Worker – turi būti pasiekiamas per /sw.js (šaknyje), kad scope = '/'
-
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
-});
-
 self.addEventListener('push', (event) => {
     console.log('[SW] push received', event.data ? event.data.text() : '(no data)');
     if (!event.data) return;
-
     let data = {};
-    try {
-        data = event.data.json();
-    } catch (e) {
-        data = { title: 'Mokslus', body: event.data.text() };
-    }
+    try { data = event.data.json(); } catch (e) { data = { title: 'Mokslus', body: event.data.text() }; }
 
     const options = {
         body: data.body || 'Naujas pranešimas',
