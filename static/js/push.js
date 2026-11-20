@@ -1,6 +1,6 @@
 // ===== VAPID VIEŠASIS RAKTAS =====
 // SVARBU: turi atitikti VAPID_PUBLIC_KEY app.py faile!
-const VAPID_PUBLIC_KEY = 'BIzX1Z7pL4sN6wX1yZ3aB5cD7eF9gH1jK3mN5pQ7rS9tU2vW4xY6zA8bC0dE2fG4hI6jK8lM0nO2pQ4rS6tU8vW0xY2zA4bC6dE8fG0hI2jK4lM6nO8pQ0rS2tU4vW6xY8zA0bC2dE4fG6hI8jK0lM2nO4pQ6rS8tU0vW2xY4zA6bC8dE0fG2hI4jK6lM8nO0pQ2rS4tU6vW8xY0zA2bC4d';
+const VAPID_PUBLIC_KEY = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEoFGUFN5lKoU09BqKLYyL4/53DhuKTuiC56JWlLtlJb4g0nJ/nffqTlZhnbuUaU3+S7/+VKnRnN8u1pMVfzBXjg==';
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
