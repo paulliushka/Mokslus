@@ -1,36 +1,41 @@
-self.addEventListener('push', (event) => {
-    console.log('[SW] push received', event.data ? event.data.text() : '(no data)');
-    if (!event.data) return;
-    let data = {};
-    try { data = event.data.json(); } catch (e) { data = { title: 'Mokslus', body: event.data.text() }; }
+'use strict';
 
-    const options = {
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    let data;
+    try {
+        data = event.data.json();
+    } catch {
+        data = { title: 'Mokslus', body: event.data.text() };
+    }
+
+    event.waitUntil(self.registration.showNotification(data.title || 'Mokslus', {
         body: data.body || 'Naujas pranešimas',
         icon: '/static/images/apple-touch-icon.png',
         badge: '/static/images/apple-touch-icon.png',
         data: { url: data.url || '/' },
         vibrate: [200, 100, 200],
         tag: data.tag || 'mokslus',
-        requireInteraction: false
-    };
-
-    event.waitUntil(
-        self.registration.showNotification(data.title || 'Mokslus', options)
-    );
+        requireInteraction: false,
+    }));
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const url = event.notification.data?.url || '/';
-    event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-            for (const client of list) {
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
-                    client.navigate(url);
-                    return client.focus();
-                }
+    const target = event.notification.data?.url || '/';
+
+    event.waitUntil((async () => {
+        const clientsList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clientsList) {
+            if (client.url.includes(self.location.origin) && 'focus' in client) {
+                await client.navigate(target);
+                return client.focus();
             }
-            if (clients.openWindow) return clients.openWindow(url);
-        })
-    );
+        }
+        return self.clients.openWindow(target);
+    })());
 });
