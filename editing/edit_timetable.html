@@ -8,100 +8,10 @@
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="../static/styles/style.css">
     <link rel="manifest" href="../static/pwa/manifest.json">
-    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/config.js" defer></script>
+    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
-    <style>
-        /* --- edit_timetable.html lokalūs stiliai --- */
-        .tt-edit-form .form-group { margin-bottom: 14px; }
-
-        .info-panel {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-        }
-        .info-panel .info-label {
-            font-size: 0.78em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .info-panel .info-value {
-            font-weight: 600;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.78em;
-            font-weight: 600;
-        }
-        .badge.owner { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
-        .badge.substitute { background: rgba(255, 140, 0, 0.18); color: #b45309; }
-        .badge.readonly { background: rgba(136, 136, 136, 0.15); color: #555; }
-
-        .readonly-banner {
-            background: rgba(255, 204, 0, 0.15);
-            border: 1px solid rgba(255, 204, 0, 0.4);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            font-size: 0.92em;
-            color: #8a6d00;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color, #e5e7eb);
-        }
-        .form-actions .delete-btn {
-            background: none;
-            border: 1px solid #c0392b;
-            color: #c0392b;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.15s;
-        }
-        .form-actions .delete-btn:hover {
-            background: rgba(192, 57, 43, 0.08);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-
-        .hint-text {
-            font-size: 0.85em;
-            color: var(--text-muted, #888);
-            margin-top: 4px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -112,23 +22,23 @@
                 ⚠️ Jūs nesate šio įrašo savininkas. Galite tik peržiūrėti duomenis.
             </div>
 
-            <div id="infoPanel" class="info-panel d-none">
-                <div>
+            <div id="infoPanel" class="info-panel d-none" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;">
+                <div class="info-item">
                     <div class="info-label">Būsena</div>
                     <div class="info-value" id="infoStatus">–</div>
                 </div>
-                <div>
+                <div class="info-item">
                     <div class="info-label">Savininkas</div>
                     <div class="info-value" id="infoOwner">–</div>
                 </div>
-                <div>
+                <div class="info-item">
                     <div class="info-label">Faktiškai ves</div>
                     <div class="info-value" id="infoTeacher">–</div>
                 </div>
             </div>
 
             <div id="formWrapper" class="d-none">
-                <form id="editTimetableForm" class="tt-edit-form" novalidate>
+                <form id="editTimetableForm" novalidate>
                     <div class="form-group">
                         <label for="groupSelect">Grupė</label>
                         <select id="groupSelect" required></select>
@@ -181,9 +91,9 @@
                         </div>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="flex-actions-mt15">
                         <button type="submit" class="btn btn-primary" id="updateBtn">Atnaujinti įrašą</button>
-                        <button type="button" class="delete-btn d-none" id="deleteBtn">Pašalinti pamoką</button>
+                        <button type="button" class="btn btn-secondary d-none" id="deleteBtn">Pašalinti pamoką</button>
                     </div>
                 </form>
             </div>
@@ -208,9 +118,6 @@
         let isOwner = false;
         let submitting = false;
 
-        // ------------------------------------------------------------------
-        // Init
-        // ------------------------------------------------------------------
         async function init() {
             try {
                 const profileRes = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -243,9 +150,6 @@
             document.getElementById('emptyState').classList.remove('d-none');
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadAllData() {
             try {
                 const [resGroups, resTeachers, resTt] = await Promise.all([
@@ -317,7 +221,6 @@
                 if (item.teacher_id && String(t.user_id) === String(item.teacher_id)) opt.selected = true;
                 select.appendChild(opt);
             });
-            // Jei teacher_id nėra sąraše - pridedame
             if (item.teacher_id && !(teachers || []).some(t => String(t.user_id) === String(item.teacher_id))) {
                 const opt = document.createElement('option');
                 opt.value = item.teacher_id;
@@ -338,7 +241,6 @@
         function renderInfoPanel(item) {
             document.getElementById('infoPanel').classList.remove('d-none');
 
-            // Būsena
             const statusEl = document.getElementById('infoStatus');
             statusEl.replaceChildren();
             if (isOwner) {
@@ -347,20 +249,12 @@
                 statusEl.appendChild(makeBadge('Pavaduotojas', 'substitute'));
             }
 
-            // Savininkas - iš API gauname owner_id, bet vardą turime tik teachers sąraše
             document.getElementById('infoOwner').textContent = isOwner ? 'Jūs' : 'Kitas mokytojas';
-
-            // Faktiškai ves
             document.getElementById('infoTeacher').textContent = item.teacher || '–';
 
-            // Jei pavaduojama - rodomas banner
-            const isSubstitute = item.owner_id && item.teacher_id && Number(item.owner_id) !== Number(item.teacher_id);
             const banner = document.getElementById('readonlyBanner');
             if (!isOwner) {
                 banner.classList.remove('d-none');
-            } else if (isSubstitute) {
-                // Savininkas, bet pavaduojama - tik info
-                banner.classList.add('d-none');
             } else {
                 banner.classList.add('d-none');
             }
@@ -373,9 +267,6 @@
             return span;
         }
 
-        // ------------------------------------------------------------------
-        // Read-only režimas pavaduotojui
-        // ------------------------------------------------------------------
         function applyReadOnly() {
             document.querySelectorAll('#editTimetableForm select, #editTimetableForm input, #editTimetableForm textarea, #editTimetableForm button[type="submit"]').forEach(el => {
                 el.disabled = true;
@@ -383,9 +274,6 @@
             document.getElementById('deleteBtn').classList.add('d-none');
         }
 
-        // ------------------------------------------------------------------
-        // Event listeners
-        // ------------------------------------------------------------------
         function bindEvents() {
             document.getElementById('editTimetableForm').addEventListener('submit', handleUpdate);
             document.getElementById('deleteBtn').addEventListener('click', handleDelete);

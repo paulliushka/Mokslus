@@ -8,136 +8,17 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- grades.html lokalūs stiliai --- */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 10px;
-            padding: 14px 16px;
-        }
-        .stat-card .stat-label {
-            font-size: 0.82em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .stat-card .stat-value {
-            font-size: 1.6em;
-            font-weight: 700;
-            color: var(--text-primary, #111);
-        }
-
-        .grades-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 640px) {
-            .grades-toolbar { grid-template-columns: 1fr; }
-        }
-
-        .grade-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 40px;
-            padding: 0 10px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 1.1em;
-            line-height: 1;
-            white-space: nowrap;
-        }
-        .grade-badge.excellent { background: rgba(76, 217, 100, 0.18); color: #2e9e4a; }
-        .grade-badge.good      { background: rgba(37, 99, 235, 0.15);  color: #1d4ed8; }
-        .grade-badge.average   { background: rgba(255, 204, 0, 0.18);  color: #8a6d00; }
-        .grade-badge.poor      { background: rgba(255, 140, 0, 0.18);  color: #b45309; }
-        .grade-badge.fail      { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
-        .grade-badge.neutral   { background: rgba(136, 136, 136, 0.15); color: #555; }
-
-        .grade-comment {
-            max-width: 360px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            color: var(--text-secondary, #444);
-        }
-
-        .subject-section {
-            margin-bottom: 16px;
-        }
-        .subject-section summary {
-            cursor: pointer;
-            padding: 10px 14px;
-            background: var(--card-bg-alt, #f9fafb);
-            border-radius: 8px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            user-select: none;
-            list-style: none;
-        }
-        .subject-section summary::-webkit-details-marker { display: none; }
-        .subject-section summary::before {
-            content: '▸';
-            display: inline-block;
-            margin-right: 8px;
-            transition: transform 0.15s;
-        }
-        .subject-section[open] summary::before {
-            transform: rotate(90deg);
-        }
-        .subject-section summary .subject-avg {
-            font-size: 0.9em;
-            color: var(--text-muted, #888);
-            font-weight: 500;
-        }
-        .subject-section .table-responsive {
-            margin-top: 8px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p {
-            margin: 0;
-            font-size: 0.95em;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>Mano pažymiai</h1>
 
-        <!-- Statistika -->
         <div class="stats-row" id="statsRow"></div>
 
-        <!-- Sąrašas -->
         <div class="card">
             <h2>Pažymių sąrašas</h2>
 
@@ -167,9 +48,6 @@
     <script>
         let allGrades = [];
 
-        // ------------------------------------------------------------------
-        // Prieiga: puslapis tik mokiniams
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -195,9 +73,6 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadGrades() {
             try {
                 const response = await fetch(`${API_URL}/api/grades`, { credentials: 'include' });
@@ -212,15 +87,9 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Pagalbinės
-        // ------------------------------------------------------------------
         function gradeClass(grade) {
             const num = parseFloat(String(grade).replace(',', '.'));
-            if (isNaN(num)) {
-                // N, įsk, neįsk ar kiti
-                return 'neutral';
-            }
+            if (isNaN(num)) return 'neutral';
             if (num >= 9) return 'excellent';
             if (num >= 7) return 'good';
             if (num >= 5) return 'average';
@@ -249,9 +118,6 @@
             return td;
         }
 
-        // ------------------------------------------------------------------
-        // Statistika
-        // ------------------------------------------------------------------
         function renderStats() {
             const container = document.getElementById('statsRow');
             container.replaceChildren();
@@ -284,9 +150,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas
-        // ------------------------------------------------------------------
         function renderGrades(grades) {
             const container = document.getElementById('gradesContent');
             container.replaceChildren();
@@ -316,7 +179,6 @@
                 return;
             }
 
-            // Grupuojame pagal dalyką
             const groups = new Map();
             grades.forEach(g => {
                 const key = g.group_display || 'Nežinomas dalykas';
@@ -324,7 +186,6 @@
                 groups.get(key).push(g);
             });
 
-            // Rikiuojame skyrius pagal pavadinimą
             const sortedKeys = Array.from(groups.keys()).sort((a, b) =>
                 String(a).localeCompare(String(b), 'lt'));
 
@@ -348,7 +209,6 @@
                 summary.appendChild(subjectAvg);
                 section.appendChild(summary);
 
-                // Lentelė
                 const tableWrap = document.createElement('div');
                 tableWrap.className = 'table-responsive';
 
@@ -364,36 +224,26 @@
                 table.appendChild(thead);
 
                 const tbody = document.createElement('tbody');
-                // Rikiuojame pagal datą (naujausi viršuje)
                 const sorted = [...subjectGrades].sort((a, b) =>
                     String(b.date || '').localeCompare(String(a.date || '')));
 
                 sorted.forEach(g => {
                     const tr = document.createElement('tr');
 
-                    // Pažymys
                     const gradeBadge = document.createElement('span');
                     gradeBadge.className = `grade-badge ${gradeClass(g.grade)}`;
                     gradeBadge.textContent = g.grade || '–';
                     tr.appendChild(makeCell('Pažymys', gradeBadge));
 
-                    // Tipas
-                    tr.appendChild(makeCell('Tipas',
-                        document.createTextNode(g.type || '-')));
+                    tr.appendChild(makeCell('Tipas', document.createTextNode(g.type || '-')));
+                    tr.appendChild(makeCell('Data', document.createTextNode(g.date || '-')));
 
-                    // Data
-                    tr.appendChild(makeCell('Data',
-                        document.createTextNode(g.date || '-')));
-
-                    // Komentaras (tekstas!)
                     const commentDiv = document.createElement('div');
                     commentDiv.className = 'grade-comment';
                     commentDiv.textContent = g.comment || '-';
                     tr.appendChild(makeCell('Komentaras', commentDiv));
 
-                    // Mokytojas
-                    tr.appendChild(makeCell('Mokytojas',
-                        document.createTextNode(g.teacher || '-')));
+                    tr.appendChild(makeCell('Mokytojas', document.createTextNode(g.teacher || '-')));
 
                     tbody.appendChild(tr);
                 });
@@ -405,9 +255,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Filtrai
-        // ------------------------------------------------------------------
         function filterGrades() {
             const filterType = document.getElementById('filter_type').value;
             const searchText = document.getElementById('filter_search').value.toLowerCase().trim();

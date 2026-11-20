@@ -8,130 +8,15 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- timetables.html lokalūs stiliai --- */
-        .tt-form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .hint-text {
-            font-size: 0.85em;
-            color: var(--text-muted, #888);
-            margin-top: 4px;
-        }
-
-        .day-section {
-            margin-bottom: 20px;
-        }
-        .day-title {
-            font-weight: 700;
-            font-size: 1.05em;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-color, #e5e7eb);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .day-title .day-count {
-            font-size: 0.85em;
-            color: var(--text-muted, #888);
-            font-weight: 500;
-        }
-
-        .lesson-grid-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 10px;
-        }
-
-        .lesson-item-card {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 10px;
-            padding: 12px 14px;
-            transition: transform 0.12s, box-shadow 0.12s;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            position: relative;
-        }
-        .lesson-item-card.clickable {
-            cursor: pointer;
-        }
-        .lesson-item-card.clickable:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .lesson-item-card .lesson-group {
-            font-weight: 700;
-            font-size: 1em;
-            color: var(--text-primary, #111);
-        }
-        .lesson-item-card .lesson-order {
-            color: var(--accent-blue, #2563eb);
-            font-weight: 600;
-        }
-        .lesson-item-card .lesson-meta {
-            font-size: 0.88em;
-            color: var(--text-secondary, #444);
-        }
-        .lesson-item-card .lesson-dates {
-            font-size: 0.8em;
-            color: var(--text-muted, #888);
-            margin-top: 2px;
-        }
-
-        .substitute-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.75em;
-            font-weight: 600;
-            background: rgba(255, 140, 0, 0.18);
-            color: #b45309;
-            margin-left: 6px;
-        }
-        .owner-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 0.75em;
-            font-weight: 600;
-            background: rgba(37, 99, 235, 0.12);
-            color: #1d4ed8;
-            margin-left: 6px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pamokų tvarkaraštis ir valdymas</h1>
 
-        <!-- Mokytojo forma -->
         <div class="card d-none" id="createTimetableCard">
             <h2>Pridėti naują pamoką į tvarkaraštį</h2>
             <form id="addTimetableForm" novalidate>
@@ -185,7 +70,6 @@
             </form>
         </div>
 
-        <!-- Sąrašas -->
         <div class="card">
             <h2>Savaitės pamokos</h2>
             <div id="timetableContainer"></div>
@@ -200,9 +84,6 @@
         let allTimetables = [];
         let submittingTimetable = false;
 
-        // ------------------------------------------------------------------
-        // Prieiga
-        // ------------------------------------------------------------------
         async function init() {
             try {
                 const resProfile = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -233,9 +114,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Formos dropdown'ai
-        // ------------------------------------------------------------------
         async function loadFormDropdowns() {
             try {
                 const [resGroups, resTeachers] = await Promise.all([
@@ -247,7 +125,6 @@
                 const groups = await resGroups.json();
                 const teachers = await resTeachers.json();
 
-                // Grupės
                 const gSelect = document.getElementById('groupSelect');
                 gSelect.replaceChildren();
                 if (!Array.isArray(groups) || groups.length === 0) {
@@ -264,7 +141,6 @@
                     });
                 }
 
-                // Mokytojai
                 const tSelect = document.getElementById('teacherSelect');
                 tSelect.replaceChildren();
                 teachers.forEach(t => {
@@ -273,16 +149,12 @@
                     opt.textContent = `${t.name} ${t.surname}${Number(t.user_id) === currentUserId ? ' (aš)' : ''}`;
                     tSelect.appendChild(opt);
                 });
-                // Numatytasis - prisijungęs mokytojas
                 tSelect.value = String(currentUserId);
             } catch (err) {
                 showToast('Nepavyko užkrauti duomenų.', 'error');
             }
         }
 
-        // ------------------------------------------------------------------
-        // Tvarkaraščio krovimas
-        // ------------------------------------------------------------------
         async function loadTimetables() {
             try {
                 const resTt = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
@@ -296,9 +168,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Formos submit
-        // ------------------------------------------------------------------
         async function handleSaveTimetable(e) {
             e.preventDefault();
             if (submittingTimetable) return;
@@ -353,9 +222,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas
-        // ------------------------------------------------------------------
         function makeElement(tag, className, text) {
             const el = document.createElement(tag);
             if (className) el.className = className;
@@ -439,7 +305,6 @@
                 });
             }
 
-            // Grupė + badge
             const groupLine = makeElement('div', 'lesson-group');
             groupLine.appendChild(document.createTextNode(t.group_display || '-'));
             if (isTeacher) {
@@ -452,17 +317,11 @@
             }
             card.appendChild(groupLine);
 
-            // Pamoka
             const orderLine = makeElement('div', 'lesson-order', `Pamoka: ${t.lesson_order || '-'}`);
             card.appendChild(orderLine);
-
-            // Kabinetas
             card.appendChild(makeElement('div', 'lesson-meta', `Kabinetas: ${t.classroom || '-'}`));
-
-            // Mokytojas
             card.appendChild(makeElement('div', 'lesson-meta', `Mokytojas: ${t.teacher || '-'}`));
 
-            // Galiojimas
             if (t.start_date) {
                 const validity = t.end_date
                     ? `Galioja: ${t.start_date} iki ${t.end_date}`

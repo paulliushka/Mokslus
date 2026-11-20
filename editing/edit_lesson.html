@@ -8,135 +8,10 @@
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="../static/styles/style.css">
     <link rel="manifest" href="../static/pwa/manifest.json">
-    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/config.js" defer></script>
+    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
-    <style>
-        /* --- edit_lesson.html lokalūs stiliai --- */
-        .lesson-info-panel {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .lesson-info-panel .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .lesson-info-panel .info-label {
-            font-size: 0.78em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .lesson-info-panel .info-value {
-            font-weight: 600;
-            font-size: 1em;
-        }
-
-        .journal-table th {
-            white-space: nowrap;
-        }
-        .journal-table td {
-            vertical-align: middle;
-        }
-
-        .student-name-cell {
-            white-space: nowrap;
-            min-width: 160px;
-        }
-
-        .att-btn-group {
-            display: flex;
-            gap: 4px;
-        }
-        .btn-att {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color, #ccc);
-            background: var(--card-bg, #fff);
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1em;
-            transition: all 0.12s;
-        }
-        .btn-att:hover { background: rgba(0,0,0,0.04); }
-        .btn-att.active-n {
-            background: rgba(255, 59, 48, 0.15);
-            border-color: #c0392b;
-            color: #c0392b;
-        }
-        .btn-att.active-v {
-            background: rgba(255, 204, 0, 0.2);
-            border-color: #b45309;
-            color: #b45309;
-        }
-
-        .grade-btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 3px;
-            max-width: 360px;
-        }
-        .btn-grade-num {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color, #ccc);
-            background: var(--card-bg, #fff);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.92em;
-            transition: all 0.12s;
-        }
-        .btn-grade-num:hover { background: rgba(0,0,0,0.04); }
-        .btn-grade-num.active-grade {
-            background: var(--accent-blue, #2563eb);
-            border-color: var(--accent-blue, #2563eb);
-            color: #fff;
-        }
-
-        .grade-type-sel {
-            font-size: 0.9em;
-            padding: 4px 6px;
-            min-width: 150px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-
-        .save-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin: 16px 0;
-        }
-        .save-bar .save-status {
-            font-size: 0.88em;
-            color: var(--text-muted, #888);
-        }
-        .save-bar .save-status.dirty { color: #b45309; font-weight: 600; }
-        .save-bar .save-status.saved { color: #2e9e4a; font-weight: 600; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -209,9 +84,6 @@
 
         const GRADE_TYPES = ['Klasės darbas', 'Namų darbas', 'Kontrolinis darbas'];
 
-        // ------------------------------------------------------------------
-        // Init
-        // ------------------------------------------------------------------
         async function init() {
             try {
                 const profileRes = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -272,9 +144,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadLessonData() {
             try {
                 const [resStu, resJ] = await Promise.all([
@@ -303,9 +172,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Lentelės atvaizdavimas (XSS saugus)
-        // ------------------------------------------------------------------
         function renderJournalTable(jData) {
             const tbody = document.getElementById('journalTableBody');
             tbody.replaceChildren();
@@ -348,7 +214,6 @@
 
                 const tr = document.createElement('tr');
 
-                // Mokinys
                 const nameCell = document.createElement('td');
                 nameCell.className = 'student-name-cell';
                 const nameStrong = document.createElement('strong');
@@ -356,10 +221,9 @@
                 nameCell.appendChild(nameStrong);
                 tr.appendChild(nameCell);
 
-                // Lankomumas
                 const attCell = document.createElement('td');
                 const attGroup = document.createElement('div');
-                attGroup.className = 'att-btn-group';
+                attGroup.className = 'flex-gap-4';
                 ATTENDANCE_BUTTONS.forEach(cfg => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
@@ -374,7 +238,6 @@
                 attCell.appendChild(attGroup);
                 tr.appendChild(attCell);
 
-                // Pažymys
                 const gradeCell = document.createElement('td');
                 const gradeGroup = document.createElement('div');
                 gradeGroup.className = 'grade-btn-group';
@@ -393,7 +256,6 @@
                 gradeCell.appendChild(gradeGroup);
                 tr.appendChild(gradeCell);
 
-                // Tipas
                 const typeCell = document.createElement('td');
                 const typeSelect = document.createElement('select');
                 typeSelect.className = 'grade-type-sel';
@@ -405,7 +267,6 @@
                     if (gradeInfo.type === t) opt.selected = true;
                     typeSelect.appendChild(opt);
                 });
-                // Jei turimas tipas ne iš sąrašo - pridedame
                 if (gradeInfo.type && !GRADE_TYPES.includes(gradeInfo.type)) {
                     const opt = document.createElement('option');
                     opt.value = gradeInfo.type;
@@ -421,9 +282,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Lankomumo toggle
-        // ------------------------------------------------------------------
         async function toggleAttendance(studentId, status, btnElement) {
             const row = btnElement.closest('tr');
             const buttons = row.querySelectorAll('.btn-att');
@@ -452,7 +310,6 @@
                     showToast('Lankomumas atnaujintas', 'success');
                 } else {
                     showToast(result.message || 'Nepavyko atnaujinti lankomumo.', 'error');
-                    // Grąžiname atgal
                     buttons.forEach(b => b.classList.remove('active-n', 'active-v'));
                     if (isActive) {
                         btnElement.classList.add(status === 'absent_unexcused' ? 'active-n' : 'active-v');
@@ -463,9 +320,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Pažymio toggle
-        // ------------------------------------------------------------------
         async function toggleGrade(studentId, gradeVal, btnElement) {
             const groupDiv = btnElement.closest('.grade-btn-group');
             const row = btnElement.closest('tr');
@@ -504,13 +358,10 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Pažymio tipo keitimas
-        // ------------------------------------------------------------------
         async function onGradeTypeChange(studentId, typeSelect) {
             const row = typeSelect.closest('tr');
             const activeBtn = row.querySelector('.btn-grade-num.active-grade');
-            if (!activeBtn) return; // nėra pažymio - nėra ką keisti
+            if (!activeBtn) return;
 
             const gradeVal = activeBtn.textContent;
             try {
@@ -538,9 +389,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Pamokos duomenų išsaugojimas
-        // ------------------------------------------------------------------
         async function saveLessonData() {
             if (savingInProgress) return;
 

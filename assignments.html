@@ -8,93 +8,17 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- assignments.html lokalūs stiliai --- */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 10px;
-            padding: 14px 16px;
-        }
-        .stat-card .stat-label {
-            font-size: 0.82em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .stat-card .stat-value {
-            font-size: 1.6em;
-            font-weight: 700;
-            color: var(--text-primary, #111);
-        }
-        .stat-card.urgent .stat-value { color: #c0392b; }
-        .stat-card.done .stat-value { color: #888; }
-
-        .assignments-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 640px) {
-            .assignments-toolbar { grid-template-columns: 1fr; }
-        }
-
-        .due-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
-        .due-badge.overdue  { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
-        .due-badge.today    { background: rgba(255, 140, 0, 0.18);  color: #b45309; }
-        .due-badge.soon     { background: rgba(255, 204, 0, 0.18);  color: #8a6d00; }
-        .due-badge.later    { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
-        .due-badge.unknown  { background: rgba(136, 136, 136, 0.15); color: #555; }
-
-        .task-cell {
-            max-width: 480px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>Namų darbai ir užduotys</h1>
 
-        <!-- Statistika -->
         <div class="stats-row" id="statsRow"></div>
 
-        <!-- Sąrašas -->
         <div class="card">
             <h2>Esamos užduotys</h2>
 
@@ -135,9 +59,6 @@
     <script>
         let allAssignments = [];
 
-        // ------------------------------------------------------------------
-        // Prieiga: puslapis tik mokiniams
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -163,9 +84,6 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadAssignments() {
             try {
                 const response = await fetch(`${API_URL}/api/assignments`, { credentials: 'include' });
@@ -180,12 +98,8 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Datos pagalbinės
-        // ------------------------------------------------------------------
         function parseDate(str) {
             if (!str) return null;
-            // Priimame YYYY-MM-DD arba YYYY.MM.DD arba YYYY/MM/DD
             const m = String(str).trim().match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
             if (!m) return null;
             const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
@@ -232,9 +146,6 @@
             return td;
         }
 
-        // ------------------------------------------------------------------
-        // Statistika
-        // ------------------------------------------------------------------
         function renderStats() {
             const container = document.getElementById('statsRow');
             container.replaceChildren();
@@ -266,9 +177,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas
-        // ------------------------------------------------------------------
         function renderAssignments(assignments) {
             const tbody = document.getElementById('assignmentsTableBody');
             tbody.replaceChildren();
@@ -308,7 +216,6 @@
                 return;
             }
 
-            // Rikiuojame pagal terminą (artimiausi viršuje), tada pagal dalyką
             const sorted = [...assignments].sort((a, b) => {
                 const da = parseDate(a.due_date);
                 const db = parseDate(b.due_date);
@@ -326,25 +233,21 @@
             sorted.forEach(assign => {
                 const tr = document.createElement('tr');
 
-                // Grupė / Dalykas
                 const groupStrong = document.createElement('strong');
                 groupStrong.textContent = assign.group_display || '-';
                 tr.appendChild(makeCell('Grupė / Dalykas', groupStrong));
 
-                // Užduotis (tekstas!)
                 const taskDiv = document.createElement('div');
                 taskDiv.className = 'task-cell';
                 taskDiv.textContent = assign.task || '-';
                 tr.appendChild(makeCell('Užduotis', taskDiv));
 
-                // Atlikti iki su spalva
                 const status = dueStatus(assign.due_date);
                 const dueBadge = document.createElement('span');
                 dueBadge.className = `due-badge ${status}`;
                 dueBadge.textContent = dueLabel(assign.due_date);
                 tr.appendChild(makeCell('Atlikti iki', dueBadge));
 
-                // Mokytojas
                 tr.appendChild(makeCell('Mokytojas',
                     document.createTextNode(assign.teacher || '-')));
 
@@ -352,9 +255,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Filtrai
-        // ------------------------------------------------------------------
         function filterAssignments() {
             const filterStatus = document.getElementById('filter_status').value;
             const searchText = document.getElementById('filter_search').value.toLowerCase().trim();

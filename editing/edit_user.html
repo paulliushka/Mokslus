@@ -8,93 +8,10 @@
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="../static/styles/style.css">
     <link rel="manifest" href="../static/pwa/manifest.json">
-    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/config.js" defer></script>
+    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
-    <style>
-        /* --- edit_user.html lokalūs stiliai --- */
-        .info-panel {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-        }
-        .info-panel .info-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .info-panel .info-label {
-            font-size: 0.78em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .info-panel .info-value {
-            font-weight: 600;
-            font-size: 0.95em;
-            word-break: break-word;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 2px 9px;
-            border-radius: 999px;
-            font-size: 0.78em;
-            font-weight: 600;
-        }
-        .badge.active  { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
-        .badge.pending { background: rgba(255, 204, 0, 0.18); color: #8a6d00; }
-        .badge.role-student       { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
-        .badge.role-teacher       { background: rgba(139, 92, 246, 0.12); color: #6d28d9; }
-        .badge.role-administrator { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
-
-        .readonly-banner {
-            background: rgba(255, 204, 0, 0.15);
-            border: 1px solid rgba(255, 204, 0, 0.4);
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-bottom: 16px;
-            font-size: 0.9em;
-            color: #8a6d00;
-        }
-        .readonly-banner.danger {
-            background: rgba(255, 59, 48, 0.12);
-            border-color: rgba(255, 59, 48, 0.35);
-            color: #c0392b;
-        }
-
-        .form-group { margin-bottom: 14px; }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color, #e5e7eb);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -105,7 +22,7 @@
 
             <div id="warningsContainer"></div>
 
-            <div id="infoPanel" class="info-panel d-none">
+            <div id="infoPanel" class="info-panel d-none" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;">
                 <div class="info-item">
                     <div class="info-label">ID</div>
                     <div class="info-value" id="infoId">–</div>
@@ -153,7 +70,7 @@
                                autocomplete="off" placeholder="pvz. 1a">
                     </div>
 
-                    <div class="form-actions">
+                    <div class="mt-15">
                         <button type="submit" class="btn btn-primary" id="saveBtn">Išsaugoti</button>
                     </div>
                 </form>
@@ -186,9 +103,6 @@
             administrator: 'Administratorius'
         };
 
-        // ------------------------------------------------------------------
-        // Init
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -218,9 +132,6 @@
             document.getElementById('emptyState').classList.remove('d-none');
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadUser() {
             try {
                 const response = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`, { credentials: 'include' });
@@ -231,7 +142,6 @@
                 targetUser = await response.json();
                 isSelf = Number(targetUser.user_id) === Number(currentUser.user_id);
 
-                // Tikriname, ar tai paskutinis adminas (jei taip, rolės keisti negalima)
                 await checkIfLastAdmin();
 
                 document.getElementById('name').value = targetUser.name || '';
@@ -255,7 +165,6 @@
         }
 
         async function checkIfLastAdmin() {
-            // Skaičiuojame, kiek yra administratorių
             try {
                 const res = await fetch(`${API_URL}/api/users`, { credentials: 'include' });
                 if (!res.ok) return;
@@ -263,13 +172,10 @@
                 const adminCount = (users || []).filter(u => u.role === 'administrator').length;
                 isLastAdmin = targetUser.role === 'administrator' && adminCount <= 1;
             } catch (err) {
-                // ignoruojame - back-endas vis tiek patikrins
+                /* ignoruojame - back-endas vis tiek patikrins */
             }
         }
 
-        // ------------------------------------------------------------------
-        // Info panelė
-        // ------------------------------------------------------------------
         function renderInfoPanel(user) {
             document.getElementById('infoPanel').classList.remove('d-none');
             document.getElementById('infoId').textContent = user.user_id;
@@ -291,9 +197,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Įspėjimai (savęs / paskutinio admino)
-        // ------------------------------------------------------------------
         function renderWarnings() {
             const container = document.getElementById('warningsContainer');
             container.replaceChildren();
@@ -312,16 +215,12 @@
                 container.appendChild(banner);
             }
 
-            // Jei negalima keisti rolės - disable'iname select
             const roleSelect = document.getElementById('role');
             if (isSelf || isLastAdmin) {
                 roleSelect.disabled = true;
             }
         }
 
-        // ------------------------------------------------------------------
-        // Klasės laukas
-        // ------------------------------------------------------------------
         function toggleClassField() {
             const role = document.getElementById('role').value;
             const classField = document.getElementById('class');
@@ -339,9 +238,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Submit
-        // ------------------------------------------------------------------
         async function handleSubmit(e) {
             e.preventDefault();
             if (submitting) return;

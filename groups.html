@@ -8,44 +8,10 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- groups.html lokalūs stiliai --- */
-        .groups-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 640px) {
-            .groups-toolbar { grid-template-columns: 1fr; }
-        }
-
-        .group-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .group-actions a,
-        .group-actions button {
-            background: none;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            text-decoration: none;
-            transition: background 0.12s;
-        }
-        .group-actions a { color: var(--accent-blue); }
-        .group-actions button.delete { color: var(--danger-text); }
-        .group-actions a:hover { background: rgba(74, 144, 226, 0.1); }
-        .group-actions button.delete:hover { background: rgba(248, 113, 113, 0.1); }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -96,9 +62,6 @@
         let allGroups = [];
         let deleting = false;
 
-        // ------------------------------------------------------------------
-        // Prieiga
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -132,9 +95,6 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadGroups() {
             try {
                 const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
@@ -150,11 +110,8 @@
 
         function populateClassFilter() {
             const select = document.getElementById('filter_class');
-
-            // Išsaugome dabartinę reikšmę
             const currentValue = select.value;
 
-            // Išvalome, bet paliekame pirmą "-- Visos klasės --"
             while (select.options.length > 1) {
                 select.remove(1);
             }
@@ -169,15 +126,11 @@
                 select.appendChild(opt);
             });
 
-            // Grąžiname pasirinkimą, jei dar yra
             if (currentValue && classes.includes(currentValue)) {
                 select.value = currentValue;
             }
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas (XSS saugus)
-        // ------------------------------------------------------------------
         function makeCell(label, child) {
             const td = document.createElement('td');
             td.setAttribute('data-label', label);
@@ -210,23 +163,19 @@
             groups.forEach(g => {
                 const tr = document.createElement('tr');
 
-                // Grupė
                 const name = document.createElement('strong');
                 name.textContent = g.group_name || '-';
                 tr.appendChild(makeCell('Grupė', name));
 
-                // Klasė
                 tr.appendChild(makeCell('Klasė',
                     document.createTextNode(g.class ? `${g.class} klasė` : '-')));
 
-                // Mokiniai
                 const names = Array.isArray(g.student_names) ? g.student_names : [];
                 tr.appendChild(makeCell('Mokiniai',
                     names.length > 0
                         ? document.createTextNode(names.join(', '))
                         : mutedText('Grupėje mokinių nėra.')));
 
-                // Veiksmai
                 const actions = document.createElement('div');
                 actions.className = 'group-actions';
 
@@ -269,9 +218,6 @@
                 : 'Pagal pasirinktus filtrus grupių nerasta.');
         }
 
-        // ------------------------------------------------------------------
-        // Trynimas
-        // ------------------------------------------------------------------
         async function deleteGroup(group) {
             if (deleting) return;
             const question = `Ar tikrai norite ištrinti grupę „${group.group_name}“?\n\n` +

@@ -8,92 +8,17 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- attendance.html lokalūs stiliai --- */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--card-bg, #fff);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 10px;
-            padding: 14px 16px;
-            border-left-width: 4px;
-            border-left-style: solid;
-        }
-        .stat-card.stat-present  { border-left-color: #2e9e4a; }
-        .stat-card.stat-absent   { border-left-color: #c0392b; }
-        .stat-card.stat-excused  { border-left-color: #2563eb; }
-        .stat-card.stat-late     { border-left-color: #b45309; }
-
-        .stat-card .stat-label {
-            font-size: 0.82em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-        .stat-card .stat-value {
-            font-size: 1.6em;
-            font-weight: 700;
-            color: var(--text-primary, #111);
-        }
-
-        .attendance-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 640px) {
-            .attendance-toolbar { grid-template-columns: 1fr; }
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 0.85em;
-            white-space: nowrap;
-        }
-        .status-badge.present          { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
-        .status-badge.absent_unexcused { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
-        .status-badge.absent_excused   { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
-        .status-badge.late             { background: rgba(255, 204, 0, 0.18);  color: #8a6d00; }
-        .status-badge.unknown          { background: rgba(136, 136, 136, 0.15); color: #555; }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-        }
-        .empty-state h3 {
-            margin: 0 0 8px;
-            color: var(--text-primary, #111);
-        }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>Lankomumas</h1>
 
-        <!-- Statistika -->
         <div class="stats-row" id="statsRow"></div>
 
-        <!-- Sąrašas -->
         <div class="card">
             <h2>Lankomumo įrašai</h2>
 
@@ -144,9 +69,6 @@
             late: 'Vėluoja'
         };
 
-        // ------------------------------------------------------------------
-        // Prieiga: puslapis tik mokiniams
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -172,9 +94,6 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadAttendance() {
             try {
                 const response = await fetch(`${API_URL}/api/attendance`, { credentials: 'include' });
@@ -189,9 +108,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Pagalbinės
-        // ------------------------------------------------------------------
         function makeCell(label, child) {
             const td = document.createElement('td');
             td.setAttribute('data-label', label);
@@ -207,9 +123,6 @@
             return isNaN(d.getTime()) ? null : d;
         }
 
-        // ------------------------------------------------------------------
-        // Statistika
-        // ------------------------------------------------------------------
         function renderStats() {
             const container = document.getElementById('statsRow');
             container.replaceChildren();
@@ -244,9 +157,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas
-        // ------------------------------------------------------------------
         function renderAttendance(records) {
             const tbody = document.getElementById('attendanceTableBody');
             tbody.replaceChildren();
@@ -286,7 +196,6 @@
                 return;
             }
 
-            // Rikiuojame pagal datą (naujausi viršuje)
             const sorted = [...records].sort((a, b) => {
                 const da = parseDate(a.date);
                 const db = parseDate(b.date);
@@ -299,27 +208,22 @@
             sorted.forEach(att => {
                 const tr = document.createElement('tr');
 
-                // Mokinys
                 const studentStrong = document.createElement('strong');
                 studentStrong.textContent = att.student || '-';
                 tr.appendChild(makeCell('Mokinys', studentStrong));
 
-                // Grupė
                 tr.appendChild(makeCell('Grupė',
                     document.createTextNode(att.group_display || '-')));
 
-                // Būsena (badge)
                 const statusClass = STATUS_LABELS[att.status] ? att.status : 'unknown';
                 const badge = document.createElement('span');
                 badge.className = `status-badge ${statusClass}`;
                 badge.textContent = STATUS_LABELS[att.status] || att.status || '-';
                 tr.appendChild(makeCell('Būsena', badge));
 
-                // Data
                 tr.appendChild(makeCell('Data',
                     document.createTextNode(att.date || '-')));
 
-                // Mokytojas
                 tr.appendChild(makeCell('Mokytojas',
                     document.createTextNode(att.teacher || '-')));
 
@@ -327,9 +231,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Filtrai
-        // ------------------------------------------------------------------
         function filterAttendance() {
             const filterStatus = document.getElementById('filter_status').value;
             const searchText = document.getElementById('filter_search').value.toLowerCase().trim();

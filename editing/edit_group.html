@@ -8,117 +8,10 @@
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="../static/styles/style.css">
     <link rel="manifest" href="../static/pwa/manifest.json">
-    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/config.js" defer></script>
+    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
-    <style>
-        /* --- edit_group.html lokalūs stiliai --- */
-        .info-panel {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-        }
-        .info-panel .info-item { display: flex; flex-direction: column; }
-        .info-panel .info-label {
-            font-size: 0.78em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .info-panel .info-value {
-            font-weight: 600;
-            font-size: 0.95em;
-            word-break: break-word;
-        }
-
-        .scroll-box {
-            max-height: 280px;
-            overflow-y: auto;
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 8px 12px;
-            background: var(--card-bg, #fff);
-        }
-        .scroll-box label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 4px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.12s;
-        }
-        .scroll-box label:hover { background: rgba(0,0,0,0.03); }
-        .scroll-box label input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .scroll-box .empty-msg {
-            color: var(--text-muted, #888);
-            font-style: italic;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .selection-info {
-            font-size: 0.9em;
-            color: var(--text-muted, #888);
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .class-change-warning {
-            background: rgba(255, 140, 0, 0.12);
-            border: 1px solid rgba(255, 140, 0, 0.35);
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-bottom: 12px;
-            font-size: 0.9em;
-            color: #b45309;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .form-group { margin-bottom: 14px; }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color, #e5e7eb);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon { font-size: 3em; margin-bottom: 12px; }
-        .empty-state h3 { margin: 0 0 8px; color: var(--text-primary, #111); }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-
-        .btn-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 8px;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -127,7 +20,7 @@
         <div class="card">
             <h2>Redaguoti grupę</h2>
 
-            <div id="infoPanel" class="info-panel d-none">
+            <div id="infoPanel" class="info-panel d-none" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;">
                 <div class="info-item">
                     <div class="info-label">Grupės ID</div>
                     <div class="info-value" id="infoGroupId">–</div>
@@ -174,7 +67,7 @@
                         <div class="selection-info" id="selectionInfo"></div>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="mt-15">
                         <button type="submit" class="btn btn-primary" id="saveBtn">Išsaugoti</button>
                     </div>
                 </form>
@@ -202,9 +95,6 @@
         let studentsRequestId = 0;
         let submitting = false;
 
-        // ------------------------------------------------------------------
-        // Init
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -239,11 +129,9 @@
                 currentGroupStudents = (group.students || []).map(Number);
                 originalClass = group.class || '';
 
-                // Užpildome formą
                 document.getElementById('group_name').value = group.group_name || '';
                 renderInfoPanel(group);
 
-                // Klasės
                 const classesResp = await fetch(`${API_URL}/api/classes`, { credentials: 'include' });
                 if (!classesResp.ok) throw new Error('classes bad status');
                 const classes = await classesResp.json();
@@ -264,7 +152,6 @@
                     classSelect.appendChild(opt);
                 });
 
-                // Jei originali klasė nėra classes sąraše - pridedame
                 if (originalClass && !classes.includes(originalClass)) {
                     const opt = document.createElement('option');
                     opt.value = originalClass;
@@ -275,7 +162,6 @@
 
                 document.getElementById('formWrapper').classList.remove('d-none');
 
-                // Event listeners
                 classSelect.addEventListener('change', onClassChange);
                 document.getElementById('selectAllBtn').addEventListener('click', () => setAllStudents(true));
                 document.getElementById('deselectAllBtn').addEventListener('click', () => setAllStudents(false));
@@ -295,9 +181,6 @@
             document.getElementById('emptyState').classList.remove('d-none');
         }
 
-        // ------------------------------------------------------------------
-        // Info panelė
-        // ------------------------------------------------------------------
         function renderInfoPanel(g) {
             document.getElementById('infoPanel').classList.remove('d-none');
             document.getElementById('infoGroupId').textContent = g.group_id || '–';
@@ -305,9 +188,6 @@
             document.getElementById('infoStudentCount').textContent = (g.students || []).length;
         }
 
-        // ------------------------------------------------------------------
-        // Klasės keitimas
-        // ------------------------------------------------------------------
         async function onClassChange() {
             const newClass = document.getElementById('class_select').value;
             const warning = document.getElementById('classChangeWarning');
@@ -321,9 +201,6 @@
             await loadStudentsByClass();
         }
 
-        // ------------------------------------------------------------------
-        // Mokinių sąrašas
-        // ------------------------------------------------------------------
         async function loadStudentsByClass() {
             const className = document.getElementById('class_select').value;
             const container = document.getElementById('students_container');
@@ -364,7 +241,6 @@
                     return;
                 }
 
-                // Rikiuojame pagal pavardę
                 const sorted = [...data].sort((a, b) =>
                     String(a.surname || '').localeCompare(String(b.surname || ''), 'lt'));
 
@@ -417,7 +293,6 @@
             span.textContent = `Pasirinkta: ${checked} / ${total}`;
             info.appendChild(span);
 
-            // Skirtumas nuo pradinio sąrašo
             if (group && group.students) {
                 const currentIds = new Set(Array.from(document.querySelectorAll('.student-checkbox:checked'))
                     .map(cb => Number(cb.value)));
@@ -428,20 +303,16 @@
 
                 if (added > 0 || removed > 0) {
                     const diff = document.createElement('span');
-                    diff.style.color = 'var(--accent-blue, #2563eb)';
+                    diff.style.color = 'var(--accent)';
                     diff.textContent = `(pokyčiai: +${added} / −${removed})`;
                     info.appendChild(diff);
                 }
             }
 
-            // Mygtukų būsena
             document.getElementById('selectAllBtn').disabled = total === 0 || checked === total;
             document.getElementById('deselectAllBtn').disabled = total === 0 || checked === 0;
         }
 
-        // ------------------------------------------------------------------
-        // Submit
-        // ------------------------------------------------------------------
         async function handleSubmit(e) {
             e.preventDefault();
             if (submitting) return;

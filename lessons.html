@@ -8,43 +8,14 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- lessons.html lokalūs stiliai --- */
-        .week-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        .week-nav h2 {
-            flex: 1;
-            text-align: center;
-            margin: 0;
-        }
-        @media (max-width: 640px) {
-            .week-nav h2 {
-                order: -1;
-                flex-basis: 100%;
-            }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 32px 16px;
-            color: var(--text-muted);
-            font-style: italic;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Pamokų žurnalas (pasirinkimas)</h1>
+        <h1>Pamokų žurnalas</h1>
 
         <div class="card">
             <div class="week-nav">
@@ -76,9 +47,6 @@
             { name: 'Penktadienis', offset: 4 }
         ];
 
-        // ------------------------------------------------------------------
-        // Prieiga
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -103,9 +71,6 @@
             document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(1));
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadTimetablesData() {
             try {
                 const res = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
@@ -119,9 +84,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Savaitės navigacija
-        // ------------------------------------------------------------------
         function changeWeek(direction) {
             const newOffset = weekOffset + direction;
             if (newOffset < -MAX_WEEK_OFFSET || newOffset > MAX_WEEK_OFFSET) return;
@@ -131,7 +93,7 @@
 
         function getDaysOfCurrentWeek() {
             const curr = new Date();
-            const dayOfWeek = curr.getDay(); // 0=sekmadienis, 1=pirmadienis, ...
+            const dayOfWeek = curr.getDay();
             const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
             const monday = new Date(curr);
             monday.setDate(curr.getDate() + diffToMonday + (weekOffset * 7));
@@ -153,9 +115,6 @@
             });
         }
 
-        // ------------------------------------------------------------------
-        // Atvaizdavimas
-        // ------------------------------------------------------------------
         function makeElement(tag, className, text) {
             const el = document.createElement(tag);
             if (className) el.className = className;

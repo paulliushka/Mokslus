@@ -8,97 +8,15 @@
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="static/styles/style.css">
     <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/config.js" defer></script>
+    <script src="static/js/calendar.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
-    <style>
-        /* --- remarks.html lokalūs stiliai --- */
-        .remarks-toolbar {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        @media (max-width: 640px) {
-            .remarks-toolbar { grid-template-columns: 1fr; }
-        }
-
-        .remark-type-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.85em;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        .remark-type-badge.praise {
-            background: rgba(76, 217, 100, 0.15);
-            color: #2e9e4a;
-        }
-        .remark-type-badge.reprimand {
-            background: rgba(255, 59, 48, 0.15);
-            color: #c0392b;
-        }
-
-        .remark-content-cell {
-            max-width: 420px;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .remark-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .remark-actions a,
-        .remark-actions button {
-            background: none;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.95em;
-            text-decoration: none;
-            transition: background 0.15s;
-        }
-        .remark-actions a { color: var(--accent-blue, #2563eb); }
-        .remark-actions button.delete { color: #c0392b; }
-        .remark-actions a:hover { background: rgba(37, 99, 235, 0.1); }
-        .remark-actions button.delete:hover { background: rgba(192, 57, 43, 0.1); }
-
-        .actions-forbidden {
-            color: var(--text-muted, #888);
-            font-style: italic;
-            font-size: 0.9em;
-        }
-
-        .add-remark-form .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        @media (max-width: 640px) {
-            .add-remark-form .form-row { grid-template-columns: 1fr; }
-        }
-
-        .char-counter {
-            text-align: right;
-            font-size: 0.8em;
-            color: var(--text-muted, #888);
-            margin-top: 4px;
-        }
-        .char-counter.over { color: #c0392b; font-weight: 600; }
-    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pagyrimai ir pastabos</h1>
 
-        <!-- Mokytojo forma -->
         <div class="card d-none" id="addRemarkCard">
             <h2>Įrašyti pagyrimą arba pastabą</h2>
 
@@ -143,7 +61,6 @@
             </form>
         </div>
 
-        <!-- Sąrašas -->
         <div class="card">
             <h2>Įrašų sąrašas</h2>
 
@@ -189,9 +106,6 @@
         let allRemarks = [];
         let submittingRemark = false;
 
-        // ------------------------------------------------------------------
-        // Prieiga: puslapis tik mokiniams ir mokytojams
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -222,7 +136,6 @@
 
             await loadRemarks();
 
-            // Filtrai
             document.getElementById('filter_type').addEventListener('change', filterRemarks);
             document.getElementById('filter_search').addEventListener('input', filterRemarks);
 
@@ -230,9 +143,6 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // Formos pagalbinės
-        // ------------------------------------------------------------------
         function setDefaultDate() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -330,9 +240,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Įrašų sąrašas (XSS saugus atvaizdavimas)
-        // ------------------------------------------------------------------
         async function loadRemarks() {
             try {
                 const response = await fetch(`${API_URL}/api/remarks`, { credentials: 'include' });
@@ -386,36 +293,29 @@
             remarks.forEach(r => {
                 const tr = document.createElement('tr');
 
-                // Mokinys
                 const studentStrong = document.createElement('strong');
                 studentStrong.textContent = r.student || 'Nežinomas';
                 tr.appendChild(makeCell('Mokinys', studentStrong));
 
-                // Grupė
                 tr.appendChild(makeCell('Grupė',
                     document.createTextNode(r.group_display || '-')));
 
-                // Tipas (badge)
                 const badge = document.createElement('span');
                 badge.className = `remark-type-badge ${r.type === 'praise' ? 'praise' : 'reprimand'}`;
                 badge.textContent = r.type === 'praise' ? 'Pagyrimas' : 'Pastaba';
                 tr.appendChild(makeCell('Tipas', badge));
 
-                // Turinys (tekstas, ne HTML!)
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'remark-content-cell';
                 contentDiv.textContent = r.content || '-';
                 tr.appendChild(makeCell('Turinys', contentDiv));
 
-                // Data
                 tr.appendChild(makeCell('Data',
                     document.createTextNode(r.date || '-')));
 
-                // Mokytojas
                 tr.appendChild(makeCell('Mokytojas',
                     document.createTextNode(r.teacher || '-')));
 
-                // Veiksmai (tik mokytojams)
                 if (showActions) {
                     const actions = document.createElement('div');
                     actions.className = 'remark-actions';
@@ -467,9 +367,6 @@
             renderRemarks(filtered);
         }
 
-        // ------------------------------------------------------------------
-        // Naujo įrašo kūrimas
-        // ------------------------------------------------------------------
         document.getElementById('addRemarkForm').addEventListener('submit', async function (e) {
             e.preventDefault();
             if (submittingRemark) return;
@@ -528,9 +425,6 @@
             }
         });
 
-        // ------------------------------------------------------------------
-        // Trynimas
-        // ------------------------------------------------------------------
         async function deleteRemark(remarkId) {
             if (!confirm('Ar tikrai norite ištrinti šį įrašą?')) return;
             try {

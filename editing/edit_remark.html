@@ -8,74 +8,10 @@
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
     <link rel="stylesheet" href="../static/styles/style.css">
     <link rel="manifest" href="../static/pwa/manifest.json">
-    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/config.js" defer></script>
+    <script src="../static/js/calendar.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
-    <style>
-        /* --- edit_remark.html lokalūs stiliai --- */
-        .info-panel {
-            background: var(--card-bg-alt, #f9fafb);
-            border: 1px solid var(--border-color, #e5e7eb);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
-        }
-        .info-panel .info-item { display: flex; flex-direction: column; }
-        .info-panel .info-label {
-            font-size: 0.78em;
-            color: var(--text-muted, #888);
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }
-        .info-panel .info-value {
-            font-weight: 600;
-            font-size: 0.95em;
-            word-break: break-word;
-        }
-
-        .remark-type-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 999px;
-            font-size: 0.82em;
-            font-weight: 600;
-        }
-        .remark-type-badge.praise    { background: rgba(76, 217, 100, 0.18); color: #2e9e4a; }
-        .remark-type-badge.reprimand { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
-
-        .form-group { margin-bottom: 14px; }
-
-        .char-counter {
-            text-align: right;
-            font-size: 0.8em;
-            color: var(--text-muted, #888);
-            margin-top: 4px;
-        }
-        .char-counter.over { color: #c0392b; font-weight: 600; }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid var(--border-color, #e5e7eb);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 48px 16px;
-            color: var(--text-muted, #888);
-        }
-        .empty-state .empty-icon { font-size: 3em; margin-bottom: 12px; }
-        .empty-state h3 { margin: 0 0 8px; color: var(--text-primary, #111); }
-        .empty-state p { margin: 0; font-size: 0.95em; }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -84,7 +20,7 @@
         <div class="card">
             <h2>Redaguoti įrašą</h2>
 
-            <div id="infoPanel" class="info-panel d-none">
+            <div id="infoPanel" class="info-panel d-none" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
                 <div class="info-item">
                     <div class="info-label">Grupė</div>
                     <div class="info-value" id="infoGroup">–</div>
@@ -125,7 +61,7 @@
                         <input type="date" name="date" id="date" required>
                     </div>
 
-                    <div class="form-actions">
+                    <div class="mt-15">
                         <button type="submit" class="btn btn-primary" id="saveBtn">Išsaugoti</button>
                     </div>
                 </form>
@@ -153,9 +89,6 @@
         const VALID_TYPES = ['praise', 'reprimand'];
         const TYPE_LABELS = { praise: 'Pagyrimas', reprimand: 'Pastaba' };
 
-        // ------------------------------------------------------------------
-        // Init
-        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -185,9 +118,6 @@
             document.getElementById('emptyState').classList.remove('d-none');
         }
 
-        // ------------------------------------------------------------------
-        // Duomenų krovimas
-        // ------------------------------------------------------------------
         async function loadRemark() {
             try {
                 const response = await fetch(`${API_URL}/api/remarks`, { credentials: 'include' });
@@ -201,7 +131,6 @@
                     return;
                 }
 
-                // Patikra: ar mokytojas yra šios grupės mokytojas (turi teisę redaguoti)
                 const groupTeacherIds = (item.group_teachers || []).map(Number);
                 const hasAccess = groupTeacherIds.includes(Number(currentUser.user_id));
 
@@ -252,9 +181,6 @@
             typeEl.appendChild(badge);
         }
 
-        // ------------------------------------------------------------------
-        // Counter
-        // ------------------------------------------------------------------
         function updateContentCounter() {
             const textarea = document.getElementById('content');
             const counter = document.getElementById('contentCounter');
@@ -263,9 +189,6 @@
             counter.classList.toggle('over', len > 1000);
         }
 
-        // ------------------------------------------------------------------
-        // Submit
-        // ------------------------------------------------------------------
         async function handleSubmit(e) {
             e.preventDefault();
             if (submitting) return;
