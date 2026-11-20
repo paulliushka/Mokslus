@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Namų darbai</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,13 +12,108 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- assignments.html lokalūs stiliai --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg, #fff);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .stat-card .stat-label {
+            font-size: 0.82em;
+            color: var(--text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .stat-card .stat-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--text-primary, #111);
+        }
+        .stat-card.urgent .stat-value { color: #c0392b; }
+        .stat-card.done .stat-value { color: #888; }
+
+        .assignments-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 640px) {
+            .assignments-toolbar { grid-template-columns: 1fr; }
+        }
+
+        .due-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        .due-badge.overdue  { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
+        .due-badge.today    { background: rgba(255, 140, 0, 0.18);  color: #b45309; }
+        .due-badge.soon     { background: rgba(255, 204, 0, 0.18);  color: #8a6d00; }
+        .due-badge.later    { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
+        .due-badge.unknown  { background: rgba(136, 136, 136, 0.15); color: #555; }
+
+        .task-cell {
+            max-width: 480px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            margin: 0 0 8px;
+            color: var(--text-primary, #111);
+        }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Namų darbai ir užduotys</h1>
 
+        <!-- Statistika -->
+        <div class="stats-row" id="statsRow"></div>
+
+        <!-- Sąrašas -->
         <div class="card">
             <h2>Esamos užduotys</h2>
+
+            <div class="assignments-toolbar">
+                <div class="form-group">
+                    <label for="filter_status" style="margin-top:0;">Rodyti</label>
+                    <select id="filter_status">
+                        <option value="">-- Visus --</option>
+                        <option value="active">Aktyvius</option>
+                        <option value="overdue">Pasibaigusius</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="filter_search" style="margin-top:0;">Paieška</label>
+                    <input type="text" id="filter_search" maxlength="100" autocomplete="off"
+                           placeholder="Užduotis / dalykas / mokytojas...">
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table>
                     <thead>
@@ -37,6 +133,11 @@
     </div>
 
     <script>
+        let allAssignments = [];
+
+        // ------------------------------------------------------------------
+        // Prieiga: puslapis tik mokiniams
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -50,40 +151,230 @@
                 }
 
                 await loadAssignments();
+                initFilters();
             } catch (err) {
                 window.location.href = '/';
             }
         }
 
+        function initFilters() {
+            document.getElementById('filter_status').addEventListener('change', filterAssignments);
+            document.getElementById('filter_search').addEventListener('input', filterAssignments);
+            if (typeof initCustomSelects === 'function') initCustomSelects();
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadAssignments() {
             try {
                 const response = await fetch(`${API_URL}/api/assignments`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
-                const assignments = await response.json();
-                const tbody = document.getElementById('assignmentsTableBody');
-                tbody.innerHTML = '';
-
-                if (!Array.isArray(assignments) || assignments.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="empty-row">Namų darbų nerasta.</td></tr>`;
-                    return;
-                }
-
-                assignments.forEach(assign => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td data-label="Grupė"><strong>${assign.group_display}</strong></td>
-                        <td data-label="Užduotis">${assign.task}</td>
-                        <td data-label="Atlikti iki" style="color: var(--accent-blue); font-weight: bold;">${assign.due_date}</td>
-                        <td data-label="Mokytojas">${assign.teacher || '-'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                if (!response.ok) throw new Error('bad status');
+                const data = await response.json();
+                allAssignments = Array.isArray(data) ? data : [];
+                renderStats();
+                filterAssignments();
             } catch (error) {
                 showToast('Nepavyko užkrauti namų darbų.', 'error');
             }
         }
 
-        window.onload = checkAuthAndInit;
+        // ------------------------------------------------------------------
+        // Datos pagalbinės
+        // ------------------------------------------------------------------
+        function parseDate(str) {
+            if (!str) return null;
+            // Priimame YYYY-MM-DD arba YYYY.MM.DD arba YYYY/MM/DD
+            const m = String(str).trim().match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+            if (!m) return null;
+            const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            if (isNaN(d.getTime())) return null;
+            return d;
+        }
+
+        function startOfToday() {
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+
+        function daysUntil(dateStr) {
+            const d = parseDate(dateStr);
+            if (!d) return null;
+            const today = startOfToday();
+            const diffMs = d.getTime() - today.getTime();
+            return Math.round(diffMs / (24 * 60 * 60 * 1000));
+        }
+
+        function dueStatus(dateStr) {
+            const days = daysUntil(dateStr);
+            if (days === null) return 'unknown';
+            if (days < 0) return 'overdue';
+            if (days === 0) return 'today';
+            if (days <= 3) return 'soon';
+            return 'later';
+        }
+
+        function dueLabel(dateStr) {
+            const days = daysUntil(dateStr);
+            if (days === null) return dateStr || '-';
+            if (days < 0) return `${dateStr} (vėluoja ${Math.abs(days)} d.)`;
+            if (days === 0) return `${dateStr} (šiandien)`;
+            if (days === 1) return `${dateStr} (rytoj)`;
+            if (days <= 3) return `${dateStr} (po ${days} d.)`;
+            return dateStr;
+        }
+
+        function makeCell(label, child) {
+            const td = document.createElement('td');
+            td.setAttribute('data-label', label);
+            td.appendChild(child);
+            return td;
+        }
+
+        // ------------------------------------------------------------------
+        // Statistika
+        // ------------------------------------------------------------------
+        function renderStats() {
+            const container = document.getElementById('statsRow');
+            container.replaceChildren();
+
+            const active = allAssignments.filter(a => dueStatus(a.due_date) !== 'overdue').length;
+            const overdue = allAssignments.filter(a => dueStatus(a.due_date) === 'overdue').length;
+
+            const stats = [
+                { label: 'Aktyvūs', value: String(active), cls: active > 0 ? 'urgent' : '' },
+                { label: 'Pasibaigę', value: String(overdue), cls: overdue > 0 ? 'done' : '' },
+                { label: 'Iš viso', value: String(allAssignments.length), cls: '' }
+            ];
+
+            stats.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'stat-card' + (s.cls ? ' ' + s.cls : '');
+
+                const label = document.createElement('div');
+                label.className = 'stat-label';
+                label.textContent = s.label;
+
+                const value = document.createElement('div');
+                value.className = 'stat-value';
+                value.textContent = s.value;
+
+                card.appendChild(label);
+                card.appendChild(value);
+                container.appendChild(card);
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Atvaizdavimas
+        // ------------------------------------------------------------------
+        function renderAssignments(assignments) {
+            const tbody = document.getElementById('assignmentsTableBody');
+            tbody.replaceChildren();
+
+            if (assignments.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.className = 'empty-row';
+
+                if (allAssignments.length === 0) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'empty-state';
+
+                    const icon = document.createElement('div');
+                    icon.className = 'empty-icon';
+                    icon.textContent = '📝';
+
+                    const h3 = document.createElement('h3');
+                    h3.textContent = 'Namų darbų dar nėra';
+
+                    const p = document.createElement('p');
+                    p.textContent = 'Kai mokytojai įrašys namų darbus, jie atsiras čia.';
+
+                    wrap.appendChild(icon);
+                    wrap.appendChild(h3);
+                    wrap.appendChild(p);
+                    td.appendChild(wrap);
+                } else {
+                    td.textContent = 'Pagal pasirinktus filtrus užduočių nerasta.';
+                    td.style.textAlign = 'center';
+                    td.style.fontStyle = 'italic';
+                }
+
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            // Rikiuojame pagal terminą (artimiausi viršuje), tada pagal dalyką
+            const sorted = [...assignments].sort((a, b) => {
+                const da = parseDate(a.due_date);
+                const db = parseDate(b.due_date);
+                if (da && db) {
+                    const diff = da.getTime() - db.getTime();
+                    if (diff !== 0) return diff;
+                } else if (da) {
+                    return -1;
+                } else if (db) {
+                    return 1;
+                }
+                return String(a.group_display || '').localeCompare(String(b.group_display || ''), 'lt');
+            });
+
+            sorted.forEach(assign => {
+                const tr = document.createElement('tr');
+
+                // Grupė / Dalykas
+                const groupStrong = document.createElement('strong');
+                groupStrong.textContent = assign.group_display || '-';
+                tr.appendChild(makeCell('Grupė / Dalykas', groupStrong));
+
+                // Užduotis (tekstas!)
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'task-cell';
+                taskDiv.textContent = assign.task || '-';
+                tr.appendChild(makeCell('Užduotis', taskDiv));
+
+                // Atlikti iki su spalva
+                const status = dueStatus(assign.due_date);
+                const dueBadge = document.createElement('span');
+                dueBadge.className = `due-badge ${status}`;
+                dueBadge.textContent = dueLabel(assign.due_date);
+                tr.appendChild(makeCell('Atlikti iki', dueBadge));
+
+                // Mokytojas
+                tr.appendChild(makeCell('Mokytojas',
+                    document.createTextNode(assign.teacher || '-')));
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Filtrai
+        // ------------------------------------------------------------------
+        function filterAssignments() {
+            const filterStatus = document.getElementById('filter_status').value;
+            const searchText = document.getElementById('filter_search').value.toLowerCase().trim();
+
+            const filtered = allAssignments.filter(a => {
+                const status = dueStatus(a.due_date);
+                if (filterStatus === 'active' && status === 'overdue') return false;
+                if (filterStatus === 'overdue' && status !== 'overdue') return false;
+
+                if (searchText) {
+                    const combined = `${a.task || ''} ${a.group_display || ''} ${a.teacher || ''}`.toLowerCase();
+                    if (!combined.includes(searchText)) return false;
+                }
+                return true;
+            });
+
+            renderAssignments(filtered);
+        }
+
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Lankomumas</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,17 +12,95 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- attendance.html lokalūs stiliai --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg, #fff);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 10px;
+            padding: 14px 16px;
+            border-left-width: 4px;
+            border-left-style: solid;
+        }
+        .stat-card.stat-present  { border-left-color: #2e9e4a; }
+        .stat-card.stat-absent   { border-left-color: #c0392b; }
+        .stat-card.stat-excused  { border-left-color: #2563eb; }
+        .stat-card.stat-late     { border-left-color: #b45309; }
+
+        .stat-card .stat-label {
+            font-size: 0.82em;
+            color: var(--text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .stat-card .stat-value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: var(--text-primary, #111);
+        }
+
+        .attendance-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 640px) {
+            .attendance-toolbar { grid-template-columns: 1fr; }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        .status-badge.present          { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
+        .status-badge.absent_unexcused { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
+        .status-badge.absent_excused   { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+        .status-badge.late             { background: rgba(255, 204, 0, 0.18);  color: #8a6d00; }
+        .status-badge.unknown          { background: rgba(136, 136, 136, 0.15); color: #555; }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            margin: 0 0 8px;
+            color: var(--text-primary, #111);
+        }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Lankomumas</h1>
 
+        <!-- Statistika -->
+        <div class="stats-row" id="statsRow"></div>
+
+        <!-- Sąrašas -->
         <div class="card">
             <h2>Lankomumo įrašai</h2>
-            <div class="grid-2-cols" style="margin-bottom: 12px;">
-                <div>
-                    <label style="margin-top:0;">Filtruoti pagal būseną:</label>
-                    <select id="filter_status" onchange="filterAttendance()">
+
+            <div class="attendance-toolbar">
+                <div class="form-group">
+                    <label for="filter_status" style="margin-top:0;">Filtruoti pagal būseną</label>
+                    <select id="filter_status">
                         <option value="">-- Visos būsenos --</option>
                         <option value="present">Dalyvauja</option>
                         <option value="absent_unexcused">Praleista</option>
@@ -29,9 +108,10 @@
                         <option value="late">Vėluoja</option>
                     </select>
                 </div>
-                <div>
-                    <label style="margin-top:0;">Paieška:</label>
-                    <input type="text" id="filter_search" placeholder="Įveskite paieškos žodį..." oninput="filterAttendance()">
+                <div class="form-group">
+                    <label for="filter_search" style="margin-top:0;">Paieška</label>
+                    <input type="text" id="filter_search" maxlength="100" autocomplete="off"
+                           placeholder="Mokinys / dalykas / mokytojas...">
                 </div>
             </div>
 
@@ -57,6 +137,16 @@
     <script>
         let allAttendance = [];
 
+        const STATUS_LABELS = {
+            present: 'Dalyvauja',
+            absent_unexcused: 'Praleista',
+            absent_excused: 'Pateisinta',
+            late: 'Vėluoja'
+        };
+
+        // ------------------------------------------------------------------
+        // Prieiga: puslapis tik mokiniams
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -70,68 +160,193 @@
                 }
 
                 await loadAttendance();
-                if (typeof initCustomSelects === 'function') initCustomSelects();
+                initFilters();
             } catch (err) {
                 window.location.href = '/';
             }
         }
 
+        function initFilters() {
+            document.getElementById('filter_status').addEventListener('change', filterAttendance);
+            document.getElementById('filter_search').addEventListener('input', filterAttendance);
+            if (typeof initCustomSelects === 'function') initCustomSelects();
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadAttendance() {
             try {
                 const response = await fetch(`${API_URL}/api/attendance`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
-                allAttendance = await response.json();
-                renderAttendance(allAttendance);
+                if (!response.ok) throw new Error('bad status');
+                const data = await response.json();
+                allAttendance = Array.isArray(data) ? data : [];
+                renderStats();
+                filterAttendance();
             } catch (error) {
                 showToast('Nepavyko užkrauti lankomumo.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Pagalbinės
+        // ------------------------------------------------------------------
+        function makeCell(label, child) {
+            const td = document.createElement('td');
+            td.setAttribute('data-label', label);
+            td.appendChild(child);
+            return td;
+        }
+
+        function parseDate(str) {
+            if (!str) return null;
+            const m = String(str).trim().match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+            if (!m) return null;
+            const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // ------------------------------------------------------------------
+        // Statistika
+        // ------------------------------------------------------------------
+        function renderStats() {
+            const container = document.getElementById('statsRow');
+            container.replaceChildren();
+
+            const counts = { present: 0, absent_unexcused: 0, absent_excused: 0, late: 0 };
+            allAttendance.forEach(a => {
+                if (counts.hasOwnProperty(a.status)) counts[a.status]++;
+            });
+
+            const stats = [
+                { label: 'Dalyvavo',  value: counts.present,          cls: 'stat-present' },
+                { label: 'Praleido',  value: counts.absent_unexcused, cls: 'stat-absent' },
+                { label: 'Pateisinta', value: counts.absent_excused,  cls: 'stat-excused' },
+                { label: 'Vėlavo',    value: counts.late,             cls: 'stat-late' }
+            ];
+
+            stats.forEach(s => {
+                const card = document.createElement('div');
+                card.className = `stat-card ${s.cls}`;
+
+                const label = document.createElement('div');
+                label.className = 'stat-label';
+                label.textContent = s.label;
+
+                const value = document.createElement('div');
+                value.className = 'stat-value';
+                value.textContent = String(s.value);
+
+                card.appendChild(label);
+                card.appendChild(value);
+                container.appendChild(card);
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Atvaizdavimas
+        // ------------------------------------------------------------------
         function renderAttendance(records) {
             const tbody = document.getElementById('attendanceTableBody');
-            tbody.innerHTML = '';
+            tbody.replaceChildren();
 
-            if (!Array.isArray(records) || records.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="empty-row">Lankomumo įrašų nerasta.</td></tr>`;
+            if (records.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 5;
+                td.className = 'empty-row';
+
+                if (allAttendance.length === 0) {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'empty-state';
+
+                    const icon = document.createElement('div');
+                    icon.className = 'empty-icon';
+                    icon.textContent = '📋';
+
+                    const h3 = document.createElement('h3');
+                    h3.textContent = 'Lankomumo įrašų dar nėra';
+
+                    const p = document.createElement('p');
+                    p.textContent = 'Kai mokytojai pažymės lankomumą, įrašai atsiras čia.';
+
+                    wrap.appendChild(icon);
+                    wrap.appendChild(h3);
+                    wrap.appendChild(p);
+                    td.appendChild(wrap);
+                } else {
+                    td.textContent = 'Pagal pasirinktus filtrus įrašų nerasta.';
+                    td.style.textAlign = 'center';
+                    td.style.fontStyle = 'italic';
+                }
+
+                tr.appendChild(td);
+                tbody.appendChild(tr);
                 return;
             }
 
-            records.forEach(att => {
-                const tr = document.createElement('tr');
-                let statusBadge = '';
-                if (att.status === 'present') statusBadge = '<span style="color: #70e000;">Dalyvauja</span>';
-                else if (att.status === 'absent_unexcused') statusBadge = '<span style="color: #ff3b30; font-weight: bold;">Praleista</span>';
-                else if (att.status === 'absent_excused') statusBadge = '<span style="color: #4cd964;">Pateisinta</span>';
-                else if (att.status === 'late') statusBadge = '<span style="color: #ffcc00;">Vėluoja</span>';
+            // Rikiuojame pagal datą (naujausi viršuje)
+            const sorted = [...records].sort((a, b) => {
+                const da = parseDate(a.date);
+                const db = parseDate(b.date);
+                if (da && db) return db.getTime() - da.getTime();
+                if (da) return -1;
+                if (db) return 1;
+                return 0;
+            });
 
-                tr.innerHTML = `
-                    <td data-label="Mokinys"><strong>${att.student}</strong></td>
-                    <td data-label="Grupė">${att.group_display}</td>
-                    <td data-label="Būsena">${statusBadge}</td>
-                    <td data-label="Data">${att.date}</td>
-                    <td data-label="Mokytojas">${att.teacher || '-'}</td>
-                `;
+            sorted.forEach(att => {
+                const tr = document.createElement('tr');
+
+                // Mokinys
+                const studentStrong = document.createElement('strong');
+                studentStrong.textContent = att.student || '-';
+                tr.appendChild(makeCell('Mokinys', studentStrong));
+
+                // Grupė
+                tr.appendChild(makeCell('Grupė',
+                    document.createTextNode(att.group_display || '-')));
+
+                // Būsena (badge)
+                const statusClass = STATUS_LABELS[att.status] ? att.status : 'unknown';
+                const badge = document.createElement('span');
+                badge.className = `status-badge ${statusClass}`;
+                badge.textContent = STATUS_LABELS[att.status] || att.status || '-';
+                tr.appendChild(makeCell('Būsena', badge));
+
+                // Data
+                tr.appendChild(makeCell('Data',
+                    document.createTextNode(att.date || '-')));
+
+                // Mokytojas
+                tr.appendChild(makeCell('Mokytojas',
+                    document.createTextNode(att.teacher || '-')));
+
                 tbody.appendChild(tr);
             });
         }
 
+        // ------------------------------------------------------------------
+        // Filtrai
+        // ------------------------------------------------------------------
         function filterAttendance() {
             const filterStatus = document.getElementById('filter_status').value;
             const searchText = document.getElementById('filter_search').value.toLowerCase().trim();
 
             const filtered = allAttendance.filter(att => {
-                let match = true;
-                if (filterStatus && att.status !== filterStatus) match = false;
+                if (filterStatus && att.status !== filterStatus) return false;
                 if (searchText) {
-                    const combined = `${att.student} ${att.group_display} ${att.teacher}`.toLowerCase();
-                    if (!combined.includes(searchText)) match = false;
+                    const combined = `${att.student || ''} ${att.group_display || ''} ${att.teacher || ''}`.toLowerCase();
+                    if (!combined.includes(searchText)) return false;
                 }
-                return match;
+                return true;
             });
+
             renderAttendance(filtered);
         }
 
-        window.onload = checkAuthAndInit;
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>

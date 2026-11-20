@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Redaguoti pastabą</title>
     <link rel="icon" href="../favicon.ico">
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
@@ -11,109 +12,318 @@
     <script src="../static/js/config.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
+    <style>
+        /* --- edit_remark.html lokalūs stiliai --- */
+        .info-panel {
+            background: var(--card-bg-alt, #f9fafb);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+        .info-panel .info-item { display: flex; flex-direction: column; }
+        .info-panel .info-label {
+            font-size: 0.78em;
+            color: var(--text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .info-panel .info-value {
+            font-weight: 600;
+            font-size: 0.95em;
+            word-break: break-word;
+        }
+
+        .remark-type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.82em;
+            font-weight: 600;
+        }
+        .remark-type-badge.praise    { background: rgba(76, 217, 100, 0.18); color: #2e9e4a; }
+        .remark-type-badge.reprimand { background: rgba(255, 59, 48, 0.18);  color: #c0392b; }
+
+        .form-group { margin-bottom: 14px; }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.8em;
+            color: var(--text-muted, #888);
+            margin-top: 4px;
+        }
+        .char-counter.over { color: #c0392b; font-weight: 600; }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color, #e5e7eb);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon { font-size: 3em; margin-bottom: 12px; }
+        .empty-state h3 { margin: 0 0 8px; color: var(--text-primary, #111); }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pagyrimai ir pastabos</h1>
-        <div class="card">
-            <h2>Redaguoti pagyrimo arba pastabos įrašą</h2>
-            <form id="editRemarkForm">
-                <label>Grupė</label>
-                <input type="text" id="group_name" disabled class="readonly-input">
-                
-                <label>Mokinys</label>
-                <input type="text" id="student" disabled class="readonly-input">
-                
-                <label>Tipas</label>
-                <select name="type" id="type" required>
-                    <option value="praise">Pagyrimas</option>
-                    <option value="reprimand">Pastaba</option>
-                </select>
-                
-                <label>Turinys</label>
-                <textarea name="content" id="content" rows="3" required></textarea>
 
-                <label>Data</label>
-                <input type="date" name="date" id="date" required>
-                
-                <button type="submit" class="btn btn-primary mt-15">Išsaugoti</button>
-            </form>
+        <div class="card">
+            <h2>Redaguoti įrašą</h2>
+
+            <div id="infoPanel" class="info-panel d-none">
+                <div class="info-item">
+                    <div class="info-label">Grupė</div>
+                    <div class="info-value" id="infoGroup">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Mokinys</div>
+                    <div class="info-value" id="infoStudent">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Tipas</div>
+                    <div class="info-value" id="infoType">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Autorius</div>
+                    <div class="info-value" id="infoAuthor">–</div>
+                </div>
+            </div>
+
+            <div id="formWrapper" class="d-none">
+                <form id="editRemarkForm" novalidate>
+                    <div class="form-group">
+                        <label for="type">Tipas</label>
+                        <select name="type" id="type" required>
+                            <option value="praise">Pagyrimas</option>
+                            <option value="reprimand">Pastaba</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="content">Turinys</label>
+                        <textarea name="content" id="content" rows="3" maxlength="1000"
+                                  placeholder="Įrašykite pastabos ar pagyrimo tekstą..." required></textarea>
+                        <div class="char-counter" id="contentCounter">0 / 1000</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Data</label>
+                        <input type="date" name="date" id="date" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="saveBtn">Išsaugoti</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="emptyState" class="empty-state d-none">
+                <div class="empty-icon">🔍</div>
+                <h3>Įrašas nerastas</h3>
+                <p>Įrašas su nurodytu ID neegzistuoja arba neturite teisių jį redaguoti.</p>
+            </div>
+
             <br>
             <a href="../remarks" class="btn-back">← Grįžti atgal</a>
         </div>
     </div>
 
     <script>
-        let currentUser = {};
         const urlParams = new URLSearchParams(window.location.search);
         const remarkId = urlParams.get('id');
-        if (!remarkId) { window.location.href = '../remarks'; }
 
+        let currentUser = {};
+        let currentRemark = null;
+        let submitting = false;
+
+        const VALID_TYPES = ['praise', 'reprimand'];
+        const TYPE_LABELS = { praise: 'Pagyrimas', reprimand: 'Pastaba' };
+
+        // ------------------------------------------------------------------
+        // Init
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
+
                 if (currentUser.role !== 'teacher') {
+                    showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
                     window.location.href = '../dashboard';
                     return;
                 }
+
+                if (!remarkId) {
+                    window.location.href = '../remarks';
+                    return;
+                }
+
                 await loadRemark();
             } catch (err) {
                 window.location.href = '/';
             }
         }
 
+        function showEmptyState() {
+            document.getElementById('formWrapper').classList.add('d-none');
+            document.getElementById('infoPanel').classList.add('d-none');
+            document.getElementById('emptyState').classList.remove('d-none');
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadRemark() {
             try {
                 const response = await fetch(`${API_URL}/api/remarks`, { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (!response.ok) throw new Error('bad status');
                 const remarks = await response.json();
-                const item = remarks.find(r => r.remark_id == remarkId);
-                
-                if (!item) { window.location.href = '../remarks'; return; }
 
-                document.getElementById('group_name').value = item.group_display || '';
-                document.getElementById('student').value = item.student || '';
-                document.getElementById('content').value = item.content || '';
+                const item = (remarks || []).find(r => String(r.remark_id) === String(remarkId));
+                if (!item) {
+                    showEmptyState();
+                    return;
+                }
 
-                const typeSelect = document.getElementById('type');
-                typeSelect.value = item.type || 'praise';
-                typeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                // Patikra: ar mokytojas yra šios grupės mokytojas (turi teisę redaguoti)
+                const groupTeacherIds = (item.group_teachers || []).map(Number);
+                const hasAccess = groupTeacherIds.includes(Number(currentUser.user_id));
 
-                const dateInput = document.getElementById('date');
-                dateInput.value = item.date || '';
-                dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                if (!hasAccess) {
+                    showEmptyState();
+                    showToast('Neturite teisių redaguoti šio įrašo.', 'error');
+                    return;
+                }
+
+                currentRemark = item;
+                fillForm(item);
+                renderInfoPanel(item);
+
+                document.getElementById('formWrapper').classList.remove('d-none');
+
+                document.getElementById('editRemarkForm').addEventListener('submit', handleSubmit);
+                document.getElementById('content').addEventListener('input', updateContentCounter);
 
                 if (typeof initCalendarPickers === 'function') initCalendarPickers();
                 if (typeof initCustomSelects === 'function') initCustomSelects();
-            } catch (error) { 
-                showToast("Nepavyko užkrauti įrašo duomenų.", "error");
+            } catch (err) {
+                showToast('Nepavyko užkrauti įrašo duomenų.', 'error');
             }
         }
 
-        document.getElementById('editRemarkForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const data = Object.fromEntries(new FormData(this).entries());
-            try {
-                const res = await fetch(`${API_URL}/api/remarks/edit/${remarkId}`, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    credentials: 'include', 
-                    body: JSON.stringify(data)
-                });
+        function fillForm(item) {
+            const typeVal = VALID_TYPES.includes(item.type) ? item.type : 'praise';
+            document.getElementById('type').value = typeVal;
+            document.getElementById('content').value = item.content || '';
+            document.getElementById('date').value = item.date || '';
 
-                if (res.ok) { 
-                    window.location.href = '../remarks'; 
-                } else { 
-                    const r = await res.json();
-                    showToast(r.message || "Nepavyko išsaugoti įrašo.", "error"); 
+            updateContentCounter();
+        }
+
+        function renderInfoPanel(item) {
+            document.getElementById('infoPanel').classList.remove('d-none');
+            document.getElementById('infoGroup').textContent = item.group_display || '–';
+            document.getElementById('infoStudent').textContent = item.student || '–';
+            document.getElementById('infoAuthor').textContent = item.teacher || '–';
+
+            const typeEl = document.getElementById('infoType');
+            typeEl.replaceChildren();
+
+            const typeVal = VALID_TYPES.includes(item.type) ? item.type : 'praise';
+            const badge = document.createElement('span');
+            badge.className = `remark-type-badge ${typeVal}`;
+            badge.textContent = TYPE_LABELS[typeVal];
+            typeEl.appendChild(badge);
+        }
+
+        // ------------------------------------------------------------------
+        // Counter
+        // ------------------------------------------------------------------
+        function updateContentCounter() {
+            const textarea = document.getElementById('content');
+            const counter = document.getElementById('contentCounter');
+            const len = textarea.value.length;
+            counter.textContent = `${len} / 1000`;
+            counter.classList.toggle('over', len > 1000);
+        }
+
+        // ------------------------------------------------------------------
+        // Submit
+        // ------------------------------------------------------------------
+        async function handleSubmit(e) {
+            e.preventDefault();
+            if (submitting) return;
+
+            const type = document.getElementById('type').value;
+            const content = document.getElementById('content').value.trim();
+            const date = document.getElementById('date').value;
+
+            if (!VALID_TYPES.includes(type)) {
+                showToast('Neteisingas įrašo tipas.', 'error');
+                return;
+            }
+            if (!content) {
+                showToast('Įveskite turinį.', 'error');
+                return;
+            }
+            if (content.length > 1000) {
+                showToast('Turinys per ilgas (max 1000 simbolių).', 'error');
+                return;
+            }
+            if (!date) {
+                showToast('Pasirinkite datą.', 'error');
+                return;
+            }
+
+            submitting = true;
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saugoma...';
+
+            try {
+                const res = await fetch(`${API_URL}/api/remarks/edit/${encodeURIComponent(remarkId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        type: type,
+                        content: content,
+                        date: date
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast('Įrašas atnaujintas!', 'success');
+                    setTimeout(() => { window.location.href = '../remarks'; }, 600);
+                } else {
+                    showToast(result.message || 'Nepavyko išsaugoti įrašo.', 'error');
                 }
             } catch (err) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Išsaugoti';
             }
-        });
+        }
 
-        window.onload = checkAuthAndInit;
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>

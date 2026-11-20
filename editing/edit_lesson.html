@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Redaguoti pamoką</title>
     <link rel="icon" href="../favicon.ico">
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
@@ -11,37 +12,176 @@
     <script src="../static/js/config.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
+    <style>
+        /* --- edit_lesson.html lokalūs stiliai --- */
+        .lesson-info-panel {
+            background: var(--card-bg-alt, #f9fafb);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .lesson-info-panel .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .lesson-info-panel .info-label {
+            font-size: 0.78em;
+            color: var(--text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .lesson-info-panel .info-value {
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .journal-table th {
+            white-space: nowrap;
+        }
+        .journal-table td {
+            vertical-align: middle;
+        }
+
+        .student-name-cell {
+            white-space: nowrap;
+            min-width: 160px;
+        }
+
+        .att-btn-group {
+            display: flex;
+            gap: 4px;
+        }
+        .btn-att {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #ccc);
+            background: var(--card-bg, #fff);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1em;
+            transition: all 0.12s;
+        }
+        .btn-att:hover { background: rgba(0,0,0,0.04); }
+        .btn-att.active-n {
+            background: rgba(255, 59, 48, 0.15);
+            border-color: #c0392b;
+            color: #c0392b;
+        }
+        .btn-att.active-v {
+            background: rgba(255, 204, 0, 0.2);
+            border-color: #b45309;
+            color: #b45309;
+        }
+
+        .grade-btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            max-width: 360px;
+        }
+        .btn-grade-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color, #ccc);
+            background: var(--card-bg, #fff);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.92em;
+            transition: all 0.12s;
+        }
+        .btn-grade-num:hover { background: rgba(0,0,0,0.04); }
+        .btn-grade-num.active-grade {
+            background: var(--accent-blue, #2563eb);
+            border-color: var(--accent-blue, #2563eb);
+            color: #fff;
+        }
+
+        .grade-type-sel {
+            font-size: 0.9em;
+            padding: 4px 6px;
+            min-width: 150px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            margin: 0 0 8px;
+            color: var(--text-primary, #111);
+        }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+
+        .save-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 16px 0;
+        }
+        .save-bar .save-status {
+            font-size: 0.88em;
+            color: var(--text-muted, #888);
+        }
+        .save-bar .save-status.dirty { color: #b45309; font-weight: 600; }
+        .save-bar .save-status.saved { color: #2e9e4a; font-weight: 600; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Redaguoti pamoką</h1>
+
         <div class="card">
-            <div class="info-panel">
-                <p><strong>Data:</strong> <span id="lblDate"></span> | <strong>Grupės ID:</strong> <span id="lblGroup"></span></p>
+            <div class="lesson-info-panel">
+                <div class="info-item">
+                    <span class="info-label">Data</span>
+                    <span class="info-value" id="lblDate">–</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Grupė</span>
+                    <span class="info-value" id="lblGroup">–</span>
+                </div>
             </div>
 
             <div class="grid-2-cols">
                 <div>
-                    <label>Klasės darbas / Tema</label>
-                    <textarea id="class_work_input" rows="3" placeholder="Įveskite klasės darbą..."></textarea>
+                    <label for="class_work_input">Klasės darbas / Tema</label>
+                    <textarea id="class_work_input" rows="3" maxlength="5000"
+                              placeholder="Įveskite klasės darbą..."></textarea>
                 </div>
                 <div>
-                    <label>Namų darbai</label>
-                    <textarea id="homework_input" rows="3" placeholder="Įveskite namų darbus..." class="mb-8"></textarea>
-                    
-                    <label>Atlikti iki (Terminas)</label>
+                    <label for="homework_input">Namų darbai</label>
+                    <textarea id="homework_input" rows="3" maxlength="2000"
+                              placeholder="Įveskite namų darbus..." class="mb-8"></textarea>
+
+                    <label for="homework_due_date">Atlikti iki (Terminas)</label>
                     <input type="date" id="homework_due_date">
                 </div>
             </div>
-            <button type="button" class="btn btn-primary mb-20" onclick="saveLessonData()">Išsaugoti viską</button>
+
+            <div class="save-bar">
+                <button type="button" class="btn btn-primary" id="saveLessonBtn">Išsaugoti viską</button>
+                <span class="save-status" id="saveStatus"></span>
+            </div>
 
             <div class="table-responsive">
-                <table>
+                <table class="journal-table">
                     <thead>
                         <tr>
-                            <th>Nr. Mokinys</th>
-                            <th>Lankomumas (N / V)</th>
-                            <th>Pažymys (1-10)</th>
+                            <th>Mokinys</th>
+                            <th>Lankomumas</th>
+                            <th>Pažymys</th>
                             <th>Tipas</th>
                         </tr>
                     </thead>
@@ -57,22 +197,46 @@
         const urlParams = new URLSearchParams(window.location.search);
         const groupId = urlParams.get('group_id');
         const dateStr = urlParams.get('date');
-        let currentStudents = [];
 
+        let currentStudents = [];
+        let savingInProgress = false;
+        let formDirty = false;
+
+        const ATTENDANCE_BUTTONS = [
+            { status: 'absent_unexcused', label: 'N', activeClass: 'active-n', title: 'Praleista' },
+            { status: 'late',             label: 'V', activeClass: 'active-v', title: 'Vėluoja' }
+        ];
+
+        const GRADE_TYPES = ['Klasės darbas', 'Namų darbas', 'Kontrolinis darbas'];
+
+        // ------------------------------------------------------------------
+        // Init
+        // ------------------------------------------------------------------
         async function init() {
             try {
                 const profileRes = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!profileRes.ok) { window.location.href = '/'; return; }
                 const user = await profileRes.json();
-                if (user.role !== 'teacher' && user.role !== 'administrator') { window.location.href = '../dashboard'; return; }
+
+                if (user.role !== 'teacher') {
+                    showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
+                    window.location.href = '../dashboard';
+                    return;
+                }
 
                 if (!groupId || !dateStr) {
                     showToast('Nenurodyta data arba grupė.', 'error');
+                    setTimeout(() => { window.location.href = '../lessons'; }, 1500);
                     return;
                 }
+
                 document.getElementById('lblDate').textContent = dateStr;
                 document.getElementById('lblGroup').textContent = groupId;
+
                 await loadLessonData();
+                setupDirtyTracking();
+                setupSaveButton();
+
                 if (typeof initCalendarPickers === 'function') initCalendarPickers();
                 if (typeof initCustomSelects === 'function') initCustomSelects();
             } catch (err) {
@@ -80,12 +244,48 @@
             }
         }
 
+        function setupDirtyTracking() {
+            ['class_work_input', 'homework_input', 'homework_due_date'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', () => { formDirty = true; updateSaveStatus(); });
+                    el.addEventListener('change', () => { formDirty = true; updateSaveStatus(); });
+                }
+            });
+        }
+
+        function setupSaveButton() {
+            document.getElementById('saveLessonBtn').addEventListener('click', saveLessonData);
+        }
+
+        function updateSaveStatus() {
+            const status = document.getElementById('saveStatus');
+            if (savingInProgress) {
+                status.className = 'save-status';
+                status.textContent = 'Saugoma...';
+            } else if (formDirty) {
+                status.className = 'save-status dirty';
+                status.textContent = 'Yra neišsaugotų pakeitimų';
+            } else {
+                status.className = 'save-status saved';
+                status.textContent = 'Viskas išsaugota';
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadLessonData() {
             try {
-                const resStu = await fetch(`${API_URL}/get_students_by_group/${groupId}`, { credentials: 'include' });
-                currentStudents = await resStu.json();
+                const [resStu, resJ] = await Promise.all([
+                    fetch(`${API_URL}/get_students_by_group/${encodeURIComponent(groupId)}`, { credentials: 'include' }),
+                    fetch(`${API_URL}/api/lesson-journal/data?group_id=${encodeURIComponent(groupId)}&date=${encodeURIComponent(dateStr)}`, { credentials: 'include' })
+                ]);
 
-                const resJ = await fetch(`${API_URL}/api/lesson-journal/data?group_id=${groupId}&date=${dateStr}`, { credentials: 'include' });
+                if (resStu.status === 401 || resJ.status === 401) { window.location.href = '/'; return; }
+                if (!resStu.ok || !resJ.ok) throw new Error('bad status');
+
+                currentStudents = await resStu.json();
                 const jData = await resJ.json();
 
                 document.getElementById('class_work_input').value = jData.class_work || '';
@@ -94,109 +294,308 @@
                     document.getElementById('homework_due_date').value = jData.homework_due_date;
                 }
 
-                const tbody = document.getElementById('journalTableBody');
-                tbody.innerHTML = '';
+                renderJournalTable(jData);
 
-                if (currentStudents.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="empty-row">Šioje grupėje mokinių nėra.</td></tr>`;
-                    return;
-                }
-
-                currentStudents.forEach((s, idx) => {
-                    const studentId = s.user_id;
-                    const attStatus = jData.attendance[studentId] || '';
-                    const gradeInfo = jData.grades[studentId] || { grade: '', type: 'Klasės darbas' };
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><strong>${idx + 1}. ${s.name} ${s.surname}</strong></td>
-                            <td>
-                                <div class="flex-gap-4">
-                                    <button type="button" class="btn-att ${attStatus === 'absent_unexcused' ? 'active-n' : ''}" onclick="toggleAttendance(${studentId}, 'absent_unexcused', this)">N</button>
-                                    <button type="button" class="btn-att ${attStatus === 'late' ? 'active-v' : ''}" onclick="toggleAttendance(${studentId}, 'late', this)">V</button>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="grade-btn-group" data-student-id="${studentId}">
-                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => `
-                                        <button type="button" class="btn-grade-num ${String(gradeInfo.grade) === String(n) ? 'active-grade' : ''}" onclick="toggleGrade(${studentId}, '${n}', this)">${n}</button>
-                                    `).join('')}
-                                </div>
-                            </td>
-                            <td>
-                                <select class="grade-type-sel">
-                                    <option value="Klasės darbas" ${gradeInfo.type === 'Klasės darbas' ? 'selected' : ''}>Klasės darbas</option>
-                                    <option value="Namų darbas" ${gradeInfo.type === 'Namų darbas' ? 'selected' : ''}>Namų darbas</option>
-                                    <option value="Kontrolinis darbas" ${gradeInfo.type === 'Kontrolinis darbas' ? 'selected' : ''}>Kontrolinis darbas</option>
-                                </select>
-                            </td>
-                        </tr>
-                    `;
-                });
+                formDirty = false;
+                updateSaveStatus();
             } catch (err) {
                 showToast('Nepavyko užkrauti žurnalo duomenų.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Lentelės atvaizdavimas (XSS saugus)
+        // ------------------------------------------------------------------
+        function renderJournalTable(jData) {
+            const tbody = document.getElementById('journalTableBody');
+            tbody.replaceChildren();
+
+            if (!Array.isArray(currentStudents) || currentStudents.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 4;
+                td.className = 'empty-row';
+
+                const wrap = document.createElement('div');
+                wrap.className = 'empty-state';
+
+                const icon = document.createElement('div');
+                icon.className = 'empty-icon';
+                icon.textContent = '👥';
+
+                const h3 = document.createElement('h3');
+                h3.textContent = 'Šioje grupėje mokinių nėra';
+
+                const p = document.createElement('p');
+                p.textContent = 'Pridėkite mokinių į grupę, kad galėtumėte pildyti žurnalą.';
+
+                wrap.appendChild(icon);
+                wrap.appendChild(h3);
+                wrap.appendChild(p);
+                td.appendChild(wrap);
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            currentStudents.forEach((s, idx) => {
+                const studentId = s.user_id;
+                const attStatus = (jData.attendance && jData.attendance[studentId]) || '';
+                const gradeInfo = (jData.grades && jData.grades[studentId]) || {
+                    grade: '',
+                    type: 'Klasės darbas'
+                };
+
+                const tr = document.createElement('tr');
+
+                // Mokinys
+                const nameCell = document.createElement('td');
+                nameCell.className = 'student-name-cell';
+                const nameStrong = document.createElement('strong');
+                nameStrong.textContent = `${idx + 1}. ${s.name || ''} ${s.surname || ''}`.trim();
+                nameCell.appendChild(nameStrong);
+                tr.appendChild(nameCell);
+
+                // Lankomumas
+                const attCell = document.createElement('td');
+                const attGroup = document.createElement('div');
+                attGroup.className = 'att-btn-group';
+                ATTENDANCE_BUTTONS.forEach(cfg => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-att';
+                    if (attStatus === cfg.status) btn.classList.add(cfg.activeClass);
+                    btn.textContent = cfg.label;
+                    btn.title = cfg.title;
+                    btn.setAttribute('aria-label', `${cfg.title} - ${s.name} ${s.surname}`);
+                    btn.addEventListener('click', () => toggleAttendance(studentId, cfg.status, btn));
+                    attGroup.appendChild(btn);
+                });
+                attCell.appendChild(attGroup);
+                tr.appendChild(attCell);
+
+                // Pažymys
+                const gradeCell = document.createElement('td');
+                const gradeGroup = document.createElement('div');
+                gradeGroup.className = 'grade-btn-group';
+                for (let n = 1; n <= 10; n++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn-grade-num';
+                    btn.textContent = String(n);
+                    btn.setAttribute('aria-label', `Pažymys ${n}`);
+                    if (String(gradeInfo.grade) === String(n)) {
+                        btn.classList.add('active-grade');
+                    }
+                    btn.addEventListener('click', () => toggleGrade(studentId, String(n), btn));
+                    gradeGroup.appendChild(btn);
+                }
+                gradeCell.appendChild(gradeGroup);
+                tr.appendChild(gradeCell);
+
+                // Tipas
+                const typeCell = document.createElement('td');
+                const typeSelect = document.createElement('select');
+                typeSelect.className = 'grade-type-sel';
+                typeSelect.setAttribute('aria-label', 'Pažymio tipas');
+                GRADE_TYPES.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    if (gradeInfo.type === t) opt.selected = true;
+                    typeSelect.appendChild(opt);
+                });
+                // Jei turimas tipas ne iš sąrašo - pridedame
+                if (gradeInfo.type && !GRADE_TYPES.includes(gradeInfo.type)) {
+                    const opt = document.createElement('option');
+                    opt.value = gradeInfo.type;
+                    opt.textContent = gradeInfo.type;
+                    opt.selected = true;
+                    typeSelect.appendChild(opt);
+                }
+                typeSelect.addEventListener('change', () => onGradeTypeChange(studentId, typeSelect));
+                typeCell.appendChild(typeSelect);
+                tr.appendChild(typeCell);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // Lankomumo toggle
+        // ------------------------------------------------------------------
+        async function toggleAttendance(studentId, status, btnElement) {
+            const row = btnElement.closest('tr');
+            const buttons = row.querySelectorAll('.btn-att');
+            const isActive = btnElement.classList.contains('active-n') || btnElement.classList.contains('active-v');
+
+            buttons.forEach(b => b.classList.remove('active-n', 'active-v'));
+            const newStatus = isActive ? '' : status;
+            if (!isActive) {
+                btnElement.classList.add(status === 'absent_unexcused' ? 'active-n' : 'active-v');
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/lesson-journal/save-attendance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        student_id: studentId,
+                        date: dateStr,
+                        status: newStatus
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast('Lankomumas atnaujintas', 'success');
+                } else {
+                    showToast(result.message || 'Nepavyko atnaujinti lankomumo.', 'error');
+                    // Grąžiname atgal
+                    buttons.forEach(b => b.classList.remove('active-n', 'active-v'));
+                    if (isActive) {
+                        btnElement.classList.add(status === 'absent_unexcused' ? 'active-n' : 'active-v');
+                    }
+                }
+            } catch (err) {
+                showToast('Tinklo klaida.', 'error');
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Pažymio toggle
+        // ------------------------------------------------------------------
+        async function toggleGrade(studentId, gradeVal, btnElement) {
+            const groupDiv = btnElement.closest('.grade-btn-group');
+            const row = btnElement.closest('tr');
+            const typeSelect = row.querySelector('.grade-type-sel');
+            const typeVal = typeSelect ? typeSelect.value : 'Klasės darbas';
+            const isAlreadyActive = btnElement.classList.contains('active-grade');
+
+            groupDiv.querySelectorAll('.btn-grade-num').forEach(b => b.classList.remove('active-grade'));
+            const finalGrade = isAlreadyActive ? '' : gradeVal;
+            if (!isAlreadyActive) btnElement.classList.add('active-grade');
+
+            try {
+                const res = await fetch(`${API_URL}/api/lesson-journal/save-grade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        student_id: studentId,
+                        date: dateStr,
+                        grade: finalGrade,
+                        type: typeVal,
+                        comment: ''
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast(finalGrade ? `Pažymys ${finalGrade} įrašytas` : 'Pažymys pašalintas', 'success');
+                } else {
+                    showToast(result.message || 'Nepavyko išsaugoti pažymio.', 'error');
+                    groupDiv.querySelectorAll('.btn-grade-num').forEach(b => b.classList.remove('active-grade'));
+                    if (isAlreadyActive) btnElement.classList.add('active-grade');
+                }
+            } catch (err) {
+                showToast('Tinklo klaida.', 'error');
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Pažymio tipo keitimas
+        // ------------------------------------------------------------------
+        async function onGradeTypeChange(studentId, typeSelect) {
+            const row = typeSelect.closest('tr');
+            const activeBtn = row.querySelector('.btn-grade-num.active-grade');
+            if (!activeBtn) return; // nėra pažymio - nėra ką keisti
+
+            const gradeVal = activeBtn.textContent;
+            try {
+                const res = await fetch(`${API_URL}/api/lesson-journal/save-grade`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        student_id: studentId,
+                        date: dateStr,
+                        grade: gradeVal,
+                        type: typeSelect.value,
+                        comment: ''
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast('Pažymio tipas atnaujintas', 'success');
+                } else {
+                    showToast(result.message || 'Nepavyko atnaujinti tipo.', 'error');
+                }
+            } catch (err) {
+                showToast('Tinklo klaida.', 'error');
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Pamokos duomenų išsaugojimas
+        // ------------------------------------------------------------------
         async function saveLessonData() {
+            if (savingInProgress) return;
+
             const classWork = document.getElementById('class_work_input').value.trim();
             const homeworkTask = document.getElementById('homework_input').value.trim();
             const homeworkDueDate = document.getElementById('homework_due_date').value;
+
+            if (classWork.length > 5000) {
+                showToast('Klasės darbas per ilgas (max 5000 simbolių).', 'error');
+                return;
+            }
+            if (homeworkTask.length > 2000) {
+                showToast('Namų darbai per ilgi (max 2000 simbolių).', 'error');
+                return;
+            }
+            if (homeworkDueDate && homeworkDueDate < dateStr) {
+                showToast('Terminas negali būti ankstesnis už pamokos datą.', 'error');
+                return;
+            }
+
+            savingInProgress = true;
+            const btn = document.getElementById('saveLessonBtn');
+            btn.disabled = true;
+            updateSaveStatus();
 
             try {
                 const res = await fetch(`${API_URL}/api/lesson-journal/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ group_id: groupId, date: dateStr, class_work: classWork, homework_task: homeworkTask, homework_due_date: homeworkDueDate })
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        date: dateStr,
+                        class_work: classWork,
+                        homework_task: homeworkTask,
+                        homework_due_date: homeworkDueDate
+                    })
                 });
+                const result = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    showToast('Sėkmingai išsaugota!', 'success');
+                    formDirty = false;
+                    showToast(result.message || 'Sėkmingai išsaugota!', 'success');
                 } else {
-                    showToast('Nepavyko išsaugoti.', 'error');
+                    showToast(result.message || 'Nepavyko išsaugoti.', 'error');
                 }
             } catch (err) {
                 showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                savingInProgress = false;
+                btn.disabled = false;
+                updateSaveStatus();
             }
         }
 
-        async function toggleAttendance(studentId, status, btnElement) {
-            const isActive = btnElement.classList.contains('active-n') || btnElement.classList.contains('active-v');
-            btnElement.closest('tr').querySelectorAll('.btn-att').forEach(b => b.classList.remove('active-n', 'active-v'));
-            let newStatus = isActive ? '' : status;
-            if (!isActive) {
-                if (status === 'absent_unexcused') btnElement.classList.add('active-n');
-                if (status === 'late') btnElement.classList.add('active-v');
-            }
-            await fetch(`${API_URL}/api/lesson-journal/save-attendance`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ group_id: groupId, student_id: studentId, date: dateStr, status: newStatus })
-            });
-            showToast('Lankomumas atnaujintas', 'success');
-        }
-
-        async function toggleGrade(studentId, gradeVal, btnElement) {
-            const groupDiv = btnElement.closest('.grade-btn-group');
-            const row = btnElement.closest('tr');
-            const typeVal = row.querySelector('.grade-type-sel').value;
-            const isAlreadyActive = btnElement.classList.contains('active-grade');
-
-            groupDiv.querySelectorAll('.btn-grade-num').forEach(b => b.classList.remove('active-grade'));
-            let finalGrade = isAlreadyActive ? '' : gradeVal;
-            if (!isAlreadyActive) btnElement.classList.add('active-grade');
-
-            await fetch(`${API_URL}/api/lesson-journal/save-grade`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ group_id: groupId, student_id: studentId, date: dateStr, grade: finalGrade, type: typeVal, comment: '' })
-            });
-            showToast(finalGrade ? `Pažymys ${finalGrade} įrašytas` : 'Pažymys pašalintas', 'success');
-        }
-
-        window.onload = init;
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

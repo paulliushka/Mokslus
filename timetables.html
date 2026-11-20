@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Tvarkaraštis</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,21 +12,136 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- timetables.html lokalūs stiliai --- */
+        .tt-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .hint-text {
+            font-size: 0.85em;
+            color: var(--text-muted, #888);
+            margin-top: 4px;
+        }
+
+        .day-section {
+            margin-bottom: 20px;
+        }
+        .day-title {
+            font-weight: 700;
+            font-size: 1.05em;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color, #e5e7eb);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .day-title .day-count {
+            font-size: 0.85em;
+            color: var(--text-muted, #888);
+            font-weight: 500;
+        }
+
+        .lesson-grid-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px;
+        }
+
+        .lesson-item-card {
+            background: var(--card-bg-alt, #f9fafb);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: transform 0.12s, box-shadow 0.12s;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+        .lesson-item-card.clickable {
+            cursor: pointer;
+        }
+        .lesson-item-card.clickable:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .lesson-item-card .lesson-group {
+            font-weight: 700;
+            font-size: 1em;
+            color: var(--text-primary, #111);
+        }
+        .lesson-item-card .lesson-order {
+            color: var(--accent-blue, #2563eb);
+            font-weight: 600;
+        }
+        .lesson-item-card .lesson-meta {
+            font-size: 0.88em;
+            color: var(--text-secondary, #444);
+        }
+        .lesson-item-card .lesson-dates {
+            font-size: 0.8em;
+            color: var(--text-muted, #888);
+            margin-top: 2px;
+        }
+
+        .substitute-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 600;
+            background: rgba(255, 140, 0, 0.18);
+            color: #b45309;
+            margin-left: 6px;
+        }
+        .owner-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75em;
+            font-weight: 600;
+            background: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+            margin-left: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            margin: 0 0 8px;
+            color: var(--text-primary, #111);
+        }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pamokų tvarkaraštis ir valdymas</h1>
 
+        <!-- Mokytojo forma -->
         <div class="card d-none" id="createTimetableCard">
             <h2>Pridėti naują pamoką į tvarkaraštį</h2>
-            <form id="addTimetableForm" onsubmit="handleSaveTimetable(event)">
-                <div class="grid-container">
+            <form id="addTimetableForm" novalidate>
+                <div class="tt-form-grid">
                     <div class="form-group">
-                        <label>Grupė</label>
+                        <label for="groupSelect">Grupė</label>
                         <select id="groupSelect" required></select>
                     </div>
                     <div class="form-group">
-                        <label>Savaitės diena</label>
+                        <label for="daySelect">Savaitės diena</label>
                         <select id="daySelect" required>
                             <option value="Pirmadienis">Pirmadienis</option>
                             <option value="Antradienis">Antradienis</option>
@@ -35,9 +151,9 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Pamoka ir laikas</label>
+                        <label for="lessonOrder">Pamoka ir laikas</label>
                         <select id="lessonOrder" required>
-                            <option value="">-- Pasirinkite pamoką ir laiką --</option>
+                            <option value="">-- Pasirinkite --</option>
                             <option value="1 pamoka (9:00-9:45)">1 pamoka (9:00 - 9:45)</option>
                             <option value="2 pamoka (9:55-10:40)">2 pamoka (9:55 - 10:40)</option>
                             <option value="3 pamoka (10:55-11:40)">3 pamoka (10:55 - 11:40)</option>
@@ -48,28 +164,30 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Kabinetas</label>
-                        <input type="text" id="classroom" placeholder="pvz. 214 kab.">
+                        <label for="classroom">Kabinetas</label>
+                        <input type="text" id="classroom" maxlength="30" placeholder="pvz. 214 kab.">
                     </div>
                     <div class="form-group">
-                        <label>Mokytojas (Pavadavimui)</label>
+                        <label for="teacherSelect">Mokytojas</label>
                         <select id="teacherSelect" required></select>
+                        <div class="hint-text">Pasirinkite kitą mokytoją, jei norite pavaduoti.</div>
                     </div>
                     <div class="form-group">
-                        <label>Galioja nuo</label>
-                        <input type="date" id="startDate" required>
+                        <label for="startDate">Galioja nuo</label>
+                        <input type="date" id="startDate">
                     </div>
                     <div class="form-group">
-                        <label>Galioja iki</label>
-                        <input type="date" id="endDate" required>
+                        <label for="endDate">Galioja iki</label>
+                        <input type="date" id="endDate">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary mt-12">Pridėti į tvarkaraštį</button>
+                <button type="submit" class="btn btn-primary mt-12" id="submitTimetableBtn">Pridėti į tvarkaraštį</button>
             </form>
         </div>
 
+        <!-- Sąrašas -->
         <div class="card">
-            <h2>Esamos savaitės pamokos</h2>
+            <h2>Savaitės pamokos</h2>
             <div id="timetableContainer"></div>
         </div>
 
@@ -78,73 +196,136 @@
 
     <script>
         let userRole = '';
+        let currentUserId = null;
+        let allTimetables = [];
+        let submittingTimetable = false;
 
+        // ------------------------------------------------------------------
+        // Prieiga
+        // ------------------------------------------------------------------
         async function init() {
             try {
                 const resProfile = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!resProfile.ok) { window.location.href = '/'; return; }
                 const user = await resProfile.json();
                 userRole = user.role;
+                currentUserId = Number(user.user_id);
 
-                if (user.role === 'teacher' || user.role === 'administrator') {
+                if (user.role !== 'teacher' && user.role !== 'student') {
+                    showToast('Puslapis pasiekiamas tik mokiniams ir mokytojams.', 'error');
+                    window.location.href = 'dashboard';
+                    return;
+                }
+
+                if (user.role === 'teacher') {
                     document.getElementById('createTimetableCard').classList.remove('d-none');
                     await loadFormDropdowns();
                 }
 
                 await loadTimetables();
+
                 if (typeof initCustomSelects === 'function') initCustomSelects();
                 if (typeof initCalendarPickers === 'function') initCalendarPickers();
+
+                document.getElementById('addTimetableForm').addEventListener('submit', handleSaveTimetable);
             } catch (err) {
                 showToast('Nepavyko užkrauti tvarkaraščio.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Formos dropdown'ai
+        // ------------------------------------------------------------------
         async function loadFormDropdowns() {
             try {
                 const [resGroups, resTeachers] = await Promise.all([
                     fetch(`${API_URL}/api/groups`, { credentials: 'include' }),
                     fetch(`${API_URL}/api/teachers`, { credentials: 'include' })
                 ]);
+                if (!resGroups.ok || !resTeachers.ok) throw new Error('bad status');
+
                 const groups = await resGroups.json();
                 const teachers = await resTeachers.json();
 
+                // Grupės
                 const gSelect = document.getElementById('groupSelect');
-                gSelect.innerHTML = '';
-                groups.forEach(g => {
-                    gSelect.innerHTML += `<option value="${g.group_id}">${g.group_name} (${g.class})</option>`;
-                });
+                gSelect.replaceChildren();
+                if (!Array.isArray(groups) || groups.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = '-- Neturite grupių --';
+                    gSelect.appendChild(opt);
+                } else {
+                    groups.forEach(g => {
+                        const opt = document.createElement('option');
+                        opt.value = g.group_id;
+                        opt.textContent = `${g.group_name} (${g.class})`;
+                        gSelect.appendChild(opt);
+                    });
+                }
 
+                // Mokytojai
                 const tSelect = document.getElementById('teacherSelect');
-                tSelect.innerHTML = '';
+                tSelect.replaceChildren();
                 teachers.forEach(t => {
-                    tSelect.innerHTML += `<option value="${t.user_id}">${t.name} ${t.surname}</option>`;
+                    const opt = document.createElement('option');
+                    opt.value = t.user_id;
+                    opt.textContent = `${t.name} ${t.surname}${Number(t.user_id) === currentUserId ? ' (aš)' : ''}`;
+                    tSelect.appendChild(opt);
                 });
+                // Numatytasis - prisijungęs mokytojas
+                tSelect.value = String(currentUserId);
             } catch (err) {
                 showToast('Nepavyko užkrauti duomenų.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Tvarkaraščio krovimas
+        // ------------------------------------------------------------------
         async function loadTimetables() {
             try {
                 const resTt = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
-                const timetables = await resTt.json();
-                renderTimetableByDays(timetables);
+                if (resTt.status === 401) { window.location.href = '/'; return; }
+                if (!resTt.ok) throw new Error('bad status');
+                const data = await resTt.json();
+                allTimetables = Array.isArray(data) ? data : [];
+                renderTimetableByDays(allTimetables);
             } catch (err) {
                 showToast('Nepavyko užkrauti įrašų.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Formos submit
+        // ------------------------------------------------------------------
         async function handleSaveTimetable(e) {
             e.preventDefault();
+            if (submittingTimetable) return;
+
             const data = {
                 group_id: document.getElementById('groupSelect').value,
                 day_of_week: document.getElementById('daySelect').value,
                 lesson_order: document.getElementById('lessonOrder').value,
-                classroom: document.getElementById('classroom').value,
+                classroom: document.getElementById('classroom').value.trim(),
                 teacher_id: document.getElementById('teacherSelect').value,
                 start_date: document.getElementById('startDate').value,
                 end_date: document.getElementById('endDate').value
             };
+
+            if (!data.group_id || !data.lesson_order || !data.teacher_id) {
+                showToast('Užpildykite privalomus laukus.', 'error');
+                return;
+            }
+            if (data.start_date && data.end_date && data.end_date < data.start_date) {
+                showToast('"Galioja iki" negali būti ankstesnė už "Galioja nuo".', 'error');
+                return;
+            }
+
+            submittingTimetable = true;
+            const btn = document.getElementById('submitTimetableBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saugoma...';
 
             try {
                 const res = await fetch(`${API_URL}/api/timetables/add`, {
@@ -153,21 +334,61 @@
                     credentials: 'include',
                     body: JSON.stringify(data)
                 });
+                const result = await res.json().catch(() => ({}));
+
                 if (res.ok) {
                     showToast('Tvarkaraščio įrašas sėkmingai sukurtas!', 'success');
-                    document.getElementById('addTimetableForm').reset();
+                    e.target.reset();
+                    document.getElementById('teacherSelect').value = String(currentUserId);
                     await loadTimetables();
                 } else {
-                    showToast('Nepavyko išsaugoti.', 'error');
+                    showToast(result.message || 'Nepavyko išsaugoti.', 'error');
                 }
             } catch (err) {
                 showToast('Tinklo klaida.', 'error');
+            } finally {
+                submittingTimetable = false;
+                btn.disabled = false;
+                btn.textContent = 'Pridėti į tvarkaraštį';
             }
+        }
+
+        // ------------------------------------------------------------------
+        // Atvaizdavimas
+        // ------------------------------------------------------------------
+        function makeElement(tag, className, text) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (text != null) el.textContent = text;
+            return el;
         }
 
         function renderTimetableByDays(timetables) {
             const container = document.getElementById('timetableContainer');
-            container.innerHTML = '';
+            container.replaceChildren();
+
+            if (timetables.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty-state';
+
+                const icon = document.createElement('div');
+                icon.className = 'empty-icon';
+                icon.textContent = '📅';
+
+                const h3 = document.createElement('h3');
+                h3.textContent = 'Tvarkaraščio įrašų nėra';
+
+                const p = document.createElement('p');
+                p.textContent = userRole === 'teacher'
+                    ? 'Pridėkite pamokų naudodamiesi forma aukščiau.'
+                    : 'Kai mokytojai sudarys tvarkaraštį, jis atsiras čia.';
+
+                empty.appendChild(icon);
+                empty.appendChild(h3);
+                empty.appendChild(p);
+                container.appendChild(empty);
+                return;
+            }
 
             const days = ['Pirmadienis', 'Antradienis', 'Trečiadienis', 'Ketvirtadienis', 'Penktadienis'];
 
@@ -177,34 +398,25 @@
 
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'day-section';
-                dayDiv.innerHTML = `<div class="day-title">${day}</div>`;
+
+                const title = document.createElement('div');
+                title.className = 'day-title';
+                title.appendChild(document.createTextNode(day));
+                const count = makeElement('span', 'day-count',
+                    dayItems.length === 0 ? '(nėra pamokų)' : `(${dayItems.length})`);
+                title.appendChild(count);
+                dayDiv.appendChild(title);
 
                 if (dayItems.length === 0) {
-                    dayDiv.innerHTML += `<div style="color: var(--text-muted); font-style: italic; padding: 6px 0;">Šią dieną pamokų nėra.</div>`;
+                    const empty = makeElement('div', '', 'Šią dieną pamokų nėra.');
+                    empty.style.cssText = 'color: var(--text-muted); font-style: italic; padding: 6px 0;';
+                    dayDiv.appendChild(empty);
                 } else {
                     const listDiv = document.createElement('div');
                     listDiv.className = 'lesson-grid-list';
 
                     dayItems.forEach(t => {
-                        const card = document.createElement('div');
-                        card.className = 'lesson-item-card';
-                        
-                        if (userRole === 'teacher' || userRole === 'administrator') {
-                            card.style.cursor = 'pointer';
-                            card.title = 'Spauskite norėdami redaguoti';
-                            card.onclick = () => {
-                                window.location.href = `editing/edit_timetable?timetable_id=${t.timetable_id}`;
-                            };
-                        }
-
-                        card.innerHTML = `
-                            <strong>${t.group_display}</strong><br>
-                            <span style="color: var(--accent-blue);">Pamoka: ${t.lesson_order}</span><br>
-                            <span style="color: var(--text-secondary);">Kabinetas: ${t.classroom || '-'}</span><br>
-                            <span style="color: var(--text-muted);">Mokytojas: ${t.teacher || '-'}</span><br>
-                            ${t.start_date ? `<small style="color:var(--text-muted);">Galioja: ${t.start_date} iki ${t.end_date || 'neribotai'}</small>` : ''}
-                        `;
-                        listDiv.appendChild(card);
+                        listDiv.appendChild(renderLessonCard(t));
                     });
                     dayDiv.appendChild(listDiv);
                 }
@@ -212,7 +424,56 @@
             });
         }
 
-        window.onload = init;
+        function renderLessonCard(t) {
+            const card = document.createElement('div');
+            const isOwner = t.is_owner === true;
+            const isTeacher = userRole === 'teacher';
+            const isSubstitute = t.owner_id && t.teacher_id && Number(t.owner_id) !== Number(t.teacher_id);
+
+            card.className = 'lesson-item-card';
+            if (isTeacher) {
+                card.classList.add('clickable');
+                card.title = isOwner ? 'Spauskite norėdami redaguoti' : 'Spauskite norėdami peržiūrėti';
+                card.addEventListener('click', () => {
+                    window.location.href = `editing/edit_timetable?timetable_id=${encodeURIComponent(t.timetable_id)}`;
+                });
+            }
+
+            // Grupė + badge
+            const groupLine = makeElement('div', 'lesson-group');
+            groupLine.appendChild(document.createTextNode(t.group_display || '-'));
+            if (isTeacher) {
+                if (isOwner) {
+                    groupLine.appendChild(makeElement('span', 'owner-badge', 'Savininkas'));
+                }
+                if (isSubstitute) {
+                    groupLine.appendChild(makeElement('span', 'substitute-badge', 'Pavaduotojas'));
+                }
+            }
+            card.appendChild(groupLine);
+
+            // Pamoka
+            const orderLine = makeElement('div', 'lesson-order', `Pamoka: ${t.lesson_order || '-'}`);
+            card.appendChild(orderLine);
+
+            // Kabinetas
+            card.appendChild(makeElement('div', 'lesson-meta', `Kabinetas: ${t.classroom || '-'}`));
+
+            // Mokytojas
+            card.appendChild(makeElement('div', 'lesson-meta', `Mokytojas: ${t.teacher || '-'}`));
+
+            // Galiojimas
+            if (t.start_date) {
+                const validity = t.end_date
+                    ? `Galioja: ${t.start_date} iki ${t.end_date}`
+                    : `Galioja nuo: ${t.start_date}`;
+                card.appendChild(makeElement('div', 'lesson-dates', validity));
+            }
+
+            return card;
+        }
+
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

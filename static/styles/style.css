@@ -8,22 +8,33 @@
     --bg-input: #3a3b3c;
     --border-color: #3e4042;
     --border-light: #4e5052;
-    
+
     --accent-blue: #4a90e2;
     --accent-blue-hover: #357abd;
     --header-bg: #3b5998;
-    
+
     --text-primary: #e4e6eb;
     --text-secondary: #b0b3b8;
     --text-muted: #8a8d91;
-    
+
     --success-bg: #132f20;
     --success-border: #1e4620;
     --success-text: #4ade80;
-    
+
     --danger-bg: #3f1d1d;
     --danger-border: #5c2c2c;
     --danger-text: #f87171;
+
+    --warning-bg: #3d2e0f;
+    --warning-border: #5c4513;
+    --warning-text: #fbbf24;
+
+    --info-bg: #132a3f;
+    --info-border: #1e405c;
+    --info-text: #60a5fa;
+
+    --radius-sm: 2px;
+    --radius-md: 4px;
 }
 
 * {
@@ -37,15 +48,21 @@
 body {
     background-color: var(--bg-main);
     color: var(--text-primary);
-    line-height: 1.34;
+    line-height: 1.4;
     padding: 0;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .container {
-    max-width: 980px;
+    max-width: 1000px;
     margin: 20px auto;
-    padding: 0 10px;
+    padding: 0 12px;
+}
+
+/* Prieinamumas: matomas fokusas klaviatūros naudotojams */
+:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 1px;
 }
 
 /* ==========================================================================
@@ -54,7 +71,7 @@ body {
 h1 {
     color: var(--text-primary);
     margin-bottom: 14px;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
     letter-spacing: -0.5px;
 }
@@ -71,7 +88,7 @@ h2 {
 }
 
 h3 {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-primary);
     margin: 10px 0 6px 0;
     font-weight: bold;
@@ -89,7 +106,7 @@ p {
     padding: 16px;
     margin-bottom: 16px;
     border: 1px solid var(--border-color);
-    border-radius: 0;
+    border-radius: var(--radius-sm);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
@@ -100,29 +117,28 @@ label {
     font-weight: bold;
     font-size: 11px;
     color: var(--text-secondary);
-    text-transform: none;
-    letter-spacing: normal;
 }
 
 /* ==========================================================================
-   4. ĮVESTIES LAUKAI (FORMOS IR TOBULAI SUSIGLAUDŽIANTYS FILTRAI)
+   4. ĮVESTIES LAUKAI
    ========================================================================== */
 input[type="text"],
 input[type="password"],
 input[type="number"],
 input[type="date"],
+input[type="email"],
 select,
 textarea {
     width: 100%;
-    height: 28px;
-    padding: 3px 6px;
+    height: 30px;
+    padding: 4px 8px;
     border: 1px solid #555555;
-    border-radius: 0;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     color: #ffffff;
     background-color: var(--bg-input);
     box-sizing: border-box;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 textarea {
@@ -132,8 +148,8 @@ textarea {
     resize: vertical;
 }
 
-input:focus, 
-select:focus, 
+input:focus,
+select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--accent-blue) !important;
@@ -142,65 +158,50 @@ textarea:focus {
     position: relative;
 }
 
-/* Paieškos ir filtravimo juosta, kur visi elementai idealiai liečiasi be tarpų */
-.card div[style*="display: flex"] {
-    display: flex !important;
-    gap: 0 !important;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-
-.card div[style*="display: flex"] > div,
-.card div[style*="display: flex"] > input,
-.card div[style*="display: flex"] > select,
-.card div[style*="display: flex"] > .custom-calendar-wrapper,
-.card div[style*="display: flex"] > .custom-select-wrapper {
-    margin-right: -1px !important;
-    margin-bottom: 0 !important;
-    flex: 1;
-    min-width: 160px;
-}
-
-.card div[style*="display: flex"] .custom-calendar-wrapper,
-.card div[style*="display: flex"] .custom-select-wrapper {
-    width: 100% !important;
-}
-
-.card div[style*="display: flex"] input,
-.card div[style*="display: flex"] select,
-.card div[style*="display: flex"] .custom-calendar-input,
-.card div[style*="display: flex"] .custom-select-trigger {
-    border-radius: 0 !important;
-    height: 28px !important;
+input:disabled,
+select:disabled,
+textarea:disabled {
+    background-color: #2a2b2c !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed;
 }
 
 /* ==========================================================================
-   5. MYGTUKAI (GLOSSY 2010 STYLE)
+   5. MYGTUKAI
    ========================================================================== */
 .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 26px;
-    padding: 0 12px;
-    font-size: 11px;
+    gap: 6px;
+    height: 30px;
+    padding: 0 14px;
+    font-size: 12px;
     font-weight: bold;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.btn:disabled,
+.btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .btn-primary {
     background: linear-gradient(to bottom, #5b8bd0 0%, #2d65b5 100%);
     color: #ffffff;
-    border: 1px solid #1a4480;
+    border-color: #1a4480;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     background: linear-gradient(to bottom, #4a7ac0 0%, #23549d 100%);
     border-color: #113366;
 }
@@ -208,11 +209,11 @@ textarea:focus {
 .btn-secondary {
     background: linear-gradient(to bottom, #4e4f50 0%, #3a3b3c 100%);
     color: var(--text-primary);
-    border: 1px solid #666666;
+    border-color: #666666;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
     background: linear-gradient(to bottom, #5a5b5c 0%, #444546 100%);
     border-color: #777777;
 }
@@ -223,7 +224,7 @@ textarea:focus {
     color: var(--accent-blue);
     text-decoration: none;
     font-weight: bold;
-    font-size: 11px;
+    font-size: 12px;
     padding: 4px 0;
 }
 
@@ -237,26 +238,23 @@ textarea:focus {
     background: #3a3b3c;
     color: var(--text-primary);
     border: 1px solid #555;
-    padding: 3px 8px;
-    font-size: 10px;
+    padding: 4px 10px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
+    transition: background 0.12s;
 }
-.btn-att:hover {
-    background: #4e4f50;
-}
+.btn-att:hover { background: #4e4f50; }
 .btn-att.active-n {
     background: linear-gradient(to bottom, #d9534f 0%, #a94442 100%) !important;
     color: white !important;
     border-color: #843534 !important;
-    font-weight: bold;
 }
 .btn-att.active-v {
     background: linear-gradient(to bottom, #f0ad4e 0%, #eea236 100%) !important;
     color: white !important;
     border-color: #eea236 !important;
-    font-weight: bold;
 }
 
 /* Pažymių mygtukai (1-10) */
@@ -269,15 +267,16 @@ textarea:focus {
     background: #3a3b3c;
     color: var(--text-primary);
     border: 1px solid #555;
-    width: 22px;
-    height: 22px;
-    font-size: 10px;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
+    transition: background 0.12s, border-color 0.12s;
 }
 .btn-grade-num:hover {
     background: #4e4f50;
@@ -287,7 +286,6 @@ textarea:focus {
     background: linear-gradient(to bottom, #5b8bd0 0%, #2d65b5 100%) !important;
     color: white !important;
     border-color: #1a4480 !important;
-    font-weight: bold;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
@@ -303,7 +301,7 @@ textarea:focus {
     border-bottom: 1px solid #133783;
     margin-bottom: 20px;
     color: #ffffff;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 
@@ -327,7 +325,7 @@ textarea:focus {
     color: var(--accent-blue);
     font-size: 10px;
     padding: 4px 8px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
     border: 1px solid var(--border-color);
     text-transform: uppercase;
@@ -343,7 +341,7 @@ textarea:focus {
 .nav-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 0;
+    border-radius: var(--radius-sm);
     padding: 16px;
     text-decoration: none !important;
     color: inherit;
@@ -363,7 +361,7 @@ textarea:focus {
 .nav-card-icon {
     width: 36px;
     height: 36px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     background: #3a3b3c;
     display: flex;
     align-items: center;
@@ -391,7 +389,7 @@ textarea:focus {
     background: linear-gradient(to bottom, #e06d6d 0%, #c9302c 100%);
     color: white;
     padding: 6px 12px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
     font-size: 11px;
     border: 1px solid #9c221e;
@@ -411,29 +409,37 @@ textarea:focus {
    7. SĄRAŠAI IR LENTELĖS
    ========================================================================== */
 .scroll-box {
-    max-height: 160px;
+    max-height: 220px;
     overflow-y: auto;
     border: 1px solid #555555;
-    padding: 6px;
-    border-radius: 0;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
     background-color: var(--bg-input);
 }
 
 .scroll-box label {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin: 4px 0;
+    padding: 4px;
     font-weight: normal;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-primary);
     cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background 0.12s;
+}
+
+.scroll-box label:hover {
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .scroll-box input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .table-responsive {
@@ -442,17 +448,18 @@ textarea:focus {
     margin-top: 8px;
     border: 1px solid var(--border-color);
     background: var(--bg-card);
+    border-radius: var(--radius-sm);
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
-    white-space: nowrap;
+    font-size: 12px;
+    min-width: 500px;
 }
 
 th, td {
-    padding: 8px 10px;
+    padding: 9px 12px;
     text-align: left;
     border-bottom: 1px solid var(--border-light);
 }
@@ -461,9 +468,9 @@ th {
     background-color: #2a2b2c;
     color: var(--accent-blue);
     font-weight: bold;
-    text-transform: none;
     font-size: 11px;
     border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
 }
 
 tr:nth-child(even) {
@@ -482,30 +489,177 @@ tr:hover {
 }
 
 /* ==========================================================================
-   8. REGISTRACIJOS KODŲ SPALVOS IR ŽENKLIUKAI
+   8. ŽENKLIUKAI IR KODAI (BADGES)
    ========================================================================== */
-.reg-code-unused {
-    color: var(--success-text);
-    background-color: var(--success-bg);
-    border: 1px solid var(--success-border);
-    padding: 2px 6px;
-    border-radius: 2px;
+/* Registracijos kodai - senasis variantas (users.html) */
+.reg-code-unused,
+.reg-code.unused {
+    color: var(--warning-text);
+    background-color: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
-    font-family: monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.reg-code-used {
-    color: var(--danger-text);
-    background-color: var(--danger-bg);
-    border: 1px solid var(--danger-border);
-    padding: 2px 6px;
-    border-radius: 2px;
+.reg-code-used,
+.reg-code.used {
+    color: var(--text-muted);
+    background-color: rgba(136, 136, 136, 0.12);
+    border: 1px solid rgba(136, 136, 136, 0.3);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
-    font-family: monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: line-through;
+}
+
+/* Kopijavimo mygtukas prie reg. kodo */
+.copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 1em;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.75;
+    border-radius: 3px;
+    transition: opacity 0.12s, background 0.12s;
+}
+.copy-btn:hover { opacity: 1; background: rgba(255, 255, 255, 0.1); }
+
+/* Bendri badge'ai */
+.badge {
     display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.badge.active  { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.badge.pending { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+
+.badge.role-student       { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+.badge.role-teacher       { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.35); }
+.badge.role-administrator { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+
+.badge.owner      { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+.badge.substitute { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.badge.readonly   { background: rgba(136, 136, 136, 0.15); color: var(--text-muted); border: 1px solid var(--border-light); }
+
+/* Būsenos (attendance, users) */
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.status-badge.active, .status-badge.present { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.status-badge.pending { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.status-badge.absent_unexcused { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+.status-badge.absent_excused   { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+.status-badge.late             { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.status-badge.unknown          { background: rgba(136, 136, 136, 0.15); color: var(--text-muted); border: 1px solid var(--border-light); }
+
+/* Rolės badge (users.html, edit_user.html) */
+.role-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.role-badge.student       { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+.role-badge.teacher       { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.35); }
+.role-badge.administrator { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+
+/* Pastabos tipas (remarks.html) */
+.remark-type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+.remark-type-badge.praise    { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.remark-type-badge.reprimand { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border); }
+
+/* Pažymio badge (grades.html) */
+.grade-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    height: 38px;
+    padding: 0 8px;
+    border-radius: var(--radius-md);
+    font-weight: bold;
+    font-size: 1.05em;
+    line-height: 1;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.grade-badge.excellent { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+.grade-badge.good      { background: var(--info-bg); color: var(--info-text); border-color: var(--info-border); }
+.grade-badge.average   { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning-border); }
+.grade-badge.poor      { background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.35); }
+.grade-badge.fail      { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
+.grade-badge.neutral   { background: rgba(136, 136, 136, 0.15); color: var(--text-muted); border-color: var(--border-light); }
+
+/* Termino badge (assignments.html) */
+.due-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+.due-badge.overdue { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); }
+.due-badge.today   { background: rgba(255, 140, 0, 0.15); color: #fb923c; border-color: rgba(255, 140, 0, 0.35); }
+.due-badge.soon    { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning-border); }
+.due-badge.later   { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+.due-badge.unknown { background: rgba(136, 136, 136, 0.15); color: var(--text-muted); border-color: var(--border-light); }
+
+/* Owner/substitute badge'ai (timetables.html, edit_timetable.html) */
+.owner-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: bold;
+    background: var(--info-bg);
+    color: var(--info-text);
+    border: 1px solid var(--info-border);
+    margin-left: 6px;
+}
+.substitute-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: bold;
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    border: 1px solid var(--warning-border);
+    margin-left: 6px;
 }
 
 .badge-owner {
@@ -513,7 +667,7 @@ tr:hover {
     color: var(--accent-blue);
     font-size: 10px;
     padding: 1px 4px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     font-weight: bold;
     margin-left: 4px;
     border: 1px solid var(--border-color);
@@ -534,7 +688,254 @@ a:hover {
 }
 
 /* ==========================================================================
-   9. CUSTOM DROPDOWN IR KALENDORIUS
+   9. STATISTIKOS KORTELĖS (grades, assignments, attendance)
+   ========================================================================== */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    border-left-width: 4px;
+    border-left-style: solid;
+    border-left-color: var(--accent-blue);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card.stat-present  { border-left-color: var(--success-text); }
+.stat-card.stat-absent   { border-left-color: var(--danger-text); }
+.stat-card.stat-excused  { border-left-color: var(--info-text); }
+.stat-card.stat-late     { border-left-color: var(--warning-text); }
+.stat-card.urgent        { border-left-color: var(--danger-text); }
+.stat-card.done          { border-left-color: var(--text-muted); }
+
+.stat-card .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+    font-size: 1.6em;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   10. TUŠČIOS BŪSENOS (empty-state)
+   ========================================================================== */
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+    font-size: 3em;
+    margin-bottom: 12px;
+    line-height: 1;
+    opacity: 0.8;
+}
+
+.empty-state h3 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   11. PAGALBINĖS KLASĖS (UTILITY)
+   ========================================================================== */
+.mt-8  { margin-top: 8px !important; }
+.mt-10 { margin-top: 10px !important; }
+.mt-12 { margin-top: 12px !important; }
+.mt-15 { margin-top: 15px !important; }
+.mb-8  { margin-bottom: 8px !important; }
+.mb-12 { margin-bottom: 12px !important; }
+.mb-16 { margin-bottom: 16px !important; }
+.mb-20 { margin-bottom: 20px !important; }
+
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.text-center { text-align: center !important; }
+.text-uppercase { text-transform: uppercase !important; }
+.w-100 { width: 100% !important; }
+
+.info-panel {
+    background: var(--bg-input);
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+}
+
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.grid-2-cols-gap10 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.flex-actions-mt15 {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.flex-between-center {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex-gap-4 {
+    display: flex;
+    gap: 4px;
+}
+
+.text-muted-italic {
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 0;
+}
+
+.title-clean {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* ==========================================================================
+   12. ĮSPĖJIMAI IR BANNER'IAI
+   ========================================================================== */
+.readonly-banner {
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: var(--warning-text);
+}
+
+.readonly-banner.danger {
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+}
+
+.class-change-warning {
+    background: rgba(255, 140, 0, 0.12);
+    border: 1px solid rgba(255, 140, 0, 0.35);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #fb923c;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.hint-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.char-counter.over {
+    color: var(--danger-text);
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   13. DALYKŲ SKYRIAI (grades.html <details>)
+   ========================================================================== */
+.subject-section {
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    overflow: hidden;
+}
+
+.subject-section summary {
+    cursor: pointer;
+    padding: 10px 14px;
+    background: #2a2b2c;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    user-select: none;
+    list-style: none;
+    color: var(--accent-blue);
+    transition: background 0.12s;
+}
+
+.subject-section summary:hover {
+    background: #323335;
+}
+
+.subject-section summary::-webkit-details-marker { display: none; }
+
+.subject-section summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.15s;
+}
+
+.subject-section[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.subject-section summary .subject-avg {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+
+.subject-section .table-responsive {
+    margin: 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ==========================================================================
+   14. CUSTOM DROPDOWN IR KALENDORIUS
    ========================================================================== */
 .custom-calendar-wrapper {
     position: relative;
@@ -566,11 +967,11 @@ input[type="date"]::-webkit-inner-spin-button {
 
 .custom-select-trigger {
     width: 100%;
-    height: 28px;
+    height: 30px;
     padding: 0 28px 0 8px;
     border: 1px solid #555555;
-    border-radius: 0;
-    font-size: 11px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
     color: #ffffff;
     background-color: var(--bg-input);
     cursor: pointer;
@@ -606,6 +1007,7 @@ input[type="date"]::-webkit-inner-spin-button {
     background-color: var(--bg-card);
     border: 1px solid var(--accent-blue);
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    border-radius: var(--radius-sm);
 }
 
 .custom-calendar-popup {
@@ -613,7 +1015,7 @@ input[type="date"]::-webkit-inner-spin-button {
 }
 
 .custom-select-options {
-    max-height: 180px;
+    max-height: 220px;
     overflow-y: auto;
     width: 100%;
 }
@@ -624,8 +1026,8 @@ input[type="date"]::-webkit-inner-spin-button {
 }
 
 .custom-select-option {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 8px 10px;
+    font-size: 12px;
     color: var(--text-primary);
     cursor: pointer;
 }
@@ -654,14 +1056,14 @@ input[type="date"]::-webkit-inner-spin-button {
 .calendar-title {
     font-weight: bold;
     color: var(--accent-blue);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .calendar-nav-btn {
     background: var(--bg-input);
     border: 1px solid var(--border-light);
     color: var(--accent-blue);
-    border-radius: 2px;
+    border-radius: var(--radius-sm);
     width: 22px;
     height: 22px;
     display: flex;
@@ -692,6 +1094,7 @@ input[type="date"]::-webkit-inner-spin-button {
     color: var(--text-primary);
     border: 1px solid #333435;
     cursor: pointer;
+    border-radius: 2px;
 }
 
 .calendar-day:hover:not(.empty) {
@@ -710,13 +1113,14 @@ input[type="date"]::-webkit-inner-spin-button {
 }
 
 /* ==========================================================================
-   10. PAMOKŲ DIENŲ KORTELĖS IR MODALINIAI LANGAI
+   15. PAMOKŲ DIENŲ KORTELĖS IR MODALINIAI LANGAI
    ========================================================================== */
 .day-section {
     margin-bottom: 20px;
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     padding: 12px;
+    border-radius: var(--radius-sm);
 }
 .day-title {
     font-size: 13px;
@@ -725,6 +1129,14 @@ input[type="date"]::-webkit-inner-spin-button {
     margin-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.day-title .day-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: normal;
 }
 .lesson-grid-list {
     display: grid;
@@ -736,11 +1148,35 @@ input[type="date"]::-webkit-inner-spin-button {
     border: 1px solid var(--border-light);
     padding: 10px;
     cursor: pointer;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 .lesson-item-card:hover {
     border-color: var(--accent-blue);
     background: #2a2b2c;
+}
+.lesson-item-card.clickable { cursor: pointer; }
+.lesson-item-card .lesson-group {
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+.lesson-item-card .lesson-order {
+    color: var(--accent-blue);
+    font-weight: bold;
+    font-size: 11px;
+}
+.lesson-item-card .lesson-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.lesson-item-card .lesson-dates {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
 }
 
 .modal-overlay {
@@ -759,10 +1195,11 @@ input[type="date"]::-webkit-inner-spin-button {
     width: 360px;
     max-width: 90%;
     box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    border-radius: var(--radius-md);
 }
 
 /* ==========================================================================
-   11. CENTRUOTI PUSLAPIAI (LOGIN, REGISTER, 404)
+   16. CENTRUOTI PUSLAPIAI (LOGIN, REGISTER, 404)
    ========================================================================== */
 .centered-page-body,
 .error-page-body {
@@ -811,70 +1248,14 @@ input[type="date"]::-webkit-inner-spin-button {
 }
 
 .error-desc {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
     margin-bottom: 20px;
     text-align: center;
 }
 
 /* ==========================================================================
-   12. PAGALBINĖS KLASĖS (UTILITY CLASSES)
-   ========================================================================== */
-.mt-15 {
-    margin-top: 15px !important;
-}
-
-.mb-8 {
-    margin-bottom: 8px !important;
-}
-
-.mb-20 {
-    margin-bottom: 20px !important;
-}
-
-.d-none {
-    display: none !important;
-}
-
-.info-panel {
-    background: var(--bg-input);
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border-light);
-}
-
-.grid-2-cols {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.grid-2-cols-gap10 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.flex-actions-mt15 {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.flex-gap-4 {
-    display: flex;
-    gap: 4px;
-}
-
-.text-muted-italic {
-    color: #8a8d91;
-    font-style: italic;
-    margin: 0;
-}
-
-/* ==========================================================================
-   13. TOAST / PRANEŠIMŲ SISTEMA (2010s DARK GLOSSY STYLE)
+   17. TOAST / PRANEŠIMŲ SISTEMA
    ========================================================================== */
 #toast-container {
     position: fixed;
@@ -884,16 +1265,16 @@ input[type="date"]::-webkit-inner-spin-button {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-width: 340px;
+    max-width: 360px;
     width: calc(100% - 24px);
     pointer-events: none;
 }
 
 .toast {
     pointer-events: auto;
-    padding: 8px 12px;
-    border-radius: 2px;
-    font-size: 11px;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -925,7 +1306,7 @@ input[type="date"]::-webkit-inner-spin-button {
     background: none;
     border: none;
     color: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     margin-left: 10px;
@@ -937,12 +1318,10 @@ input[type="date"]::-webkit-inner-spin-button {
 }
 
 /* ==========================================================================
-   14. ADAPTYVUMAS MOBILIESIEMS (RESPONSIVE)
+   18. ADAPTYVUMAS MOBILIESIEMS
    ========================================================================== */
 @media (max-width: 768px) {
-    body {
-        padding: 0;
-    }
+    body { padding: 0; }
 
     .container {
         width: 100%;
@@ -962,5 +1341,69 @@ input[type="date"]::-webkit-inner-spin-button {
 
     .btn {
         width: 100%;
+    }
+
+    .grid-2-cols,
+    .grid-2-cols-gap10 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    table {
+        min-width: 0;
+    }
+
+    th, td {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ==========================================================================
+   19. SPAUSDINIMAS (bonusas - pažymiams atsispausdinti)
+   ========================================================================== */
+@media print {
+    body {
+        background: #fff;
+        color: #000;
+        font-size: 11pt;
+    }
+
+    .dashboard-header,
+    .btn,
+    .btn-back,
+    .logout-btn,
+    .toast,
+    #toast-container,
+    .nav-card {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        background: #fff;
+    }
+
+    table {
+        font-size: 10pt;
+    }
+
+    th {
+        background: #eee !important;
+        color: #000 !important;
+    }
+
+    tr:nth-child(even) {
+        background: #f9f9f9 !important;
     }
 }

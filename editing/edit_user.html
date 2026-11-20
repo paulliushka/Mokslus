@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Redaguoti vartotoją</title>
     <link rel="icon" href="../favicon.ico">
     <link rel="apple-touch-icon" href="../static/images/apple-touch-icon.png">
@@ -11,113 +12,388 @@
     <script src="../static/js/config.js" defer></script>
     <script src="../static/js/select.js" defer></script>
     <script src="../static/js/toast.js" defer></script>
+    <style>
+        /* --- edit_user.html lokalūs stiliai --- */
+        .info-panel {
+            background: var(--card-bg-alt, #f9fafb);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        .info-panel .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-panel .info-label {
+            font-size: 0.78em;
+            color: var(--text-muted, #888);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .info-panel .info-value {
+            font-weight: 600;
+            font-size: 0.95em;
+            word-break: break-word;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 999px;
+            font-size: 0.78em;
+            font-weight: 600;
+        }
+        .badge.active  { background: rgba(76, 217, 100, 0.15); color: #2e9e4a; }
+        .badge.pending { background: rgba(255, 204, 0, 0.18); color: #8a6d00; }
+        .badge.role-student       { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+        .badge.role-teacher       { background: rgba(139, 92, 246, 0.12); color: #6d28d9; }
+        .badge.role-administrator { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+
+        .readonly-banner {
+            background: rgba(255, 204, 0, 0.15);
+            border: 1px solid rgba(255, 204, 0, 0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            font-size: 0.9em;
+            color: #8a6d00;
+        }
+        .readonly-banner.danger {
+            background: rgba(255, 59, 48, 0.12);
+            border-color: rgba(255, 59, 48, 0.35);
+            color: #c0392b;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color, #e5e7eb);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted, #888);
+        }
+        .empty-state .empty-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+        .empty-state h3 {
+            margin: 0 0 8px;
+            color: var(--text-primary, #111);
+        }
+        .empty-state p { margin: 0; font-size: 0.95em; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Vartotojai</h1>
+
         <div class="card">
             <h2>Redaguoti vartotojo duomenis</h2>
-            <form id="editUserForm">
-                <label>Vardas</label>
-                <input type="text" name="name" id="name" required>
 
-                <label>Pavardė</label>
-                <input type="text" name="surname" id="surname" required>
+            <div id="warningsContainer"></div>
 
-                <label>Rolė</label>
-                <select name="role" id="role" required onchange="toggleClassField()">
-                    <option value="teacher">Mokytojas</option>
-                    <option value="student">Mokinys</option>
-                    <option value="administrator">Administratorius</option>
-                </select>
+            <div id="infoPanel" class="info-panel d-none">
+                <div class="info-item">
+                    <div class="info-label">ID</div>
+                    <div class="info-value" id="infoId">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Vartotojo vardas</div>
+                    <div class="info-value" id="infoUsername">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Būsena</div>
+                    <div class="info-value" id="infoStatus">–</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Reg. kodas</div>
+                    <div class="info-value" id="infoRegCode">–</div>
+                </div>
+            </div>
 
-                <label>Klasė (tik mokiniams)</label>
-                <input type="text" name="class" id="class">
+            <div id="formWrapper" class="d-none">
+                <form id="editUserForm" novalidate>
+                    <div class="form-group">
+                        <label for="name">Vardas</label>
+                        <input type="text" name="name" id="name" maxlength="50"
+                               autocomplete="off" required>
+                    </div>
 
-                <button type="submit" class="btn btn-primary mt-15">Išsaugoti</button>
-            </form>
+                    <div class="form-group">
+                        <label for="surname">Pavardė</label>
+                        <input type="text" name="surname" id="surname" maxlength="50"
+                               autocomplete="off" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Rolė</label>
+                        <select name="role" id="role" required>
+                            <option value="student">Mokinys</option>
+                            <option value="teacher">Mokytojas</option>
+                            <option value="administrator">Administratorius</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="classFieldWrapper">
+                        <label for="class">Klasė (tik mokiniams)</label>
+                        <input type="text" name="class" id="class" maxlength="20"
+                               autocomplete="off" placeholder="pvz. 1a">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="saveBtn">Išsaugoti</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="emptyState" class="empty-state d-none">
+                <div class="empty-icon">🔍</div>
+                <h3>Vartotojas nerastas</h3>
+                <p>Vartotojas su nurodytu ID neegzistuoja arba buvo ištrintas.</p>
+            </div>
+
             <br>
             <a href="../users" class="btn-back">← Grįžti atgal</a>
         </div>
     </div>
 
     <script>
-        let currentUser = {};
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('id');
-        if (!userId) { window.location.href = '../users'; }
 
+        let currentUser = {};
+        let targetUser = null;
+        let submitting = false;
+        let isSelf = false;
+        let isLastAdmin = false;
+
+        const ROLE_LABELS = {
+            student: 'Mokinys',
+            teacher: 'Mokytojas',
+            administrator: 'Administratorius'
+        };
+
+        // ------------------------------------------------------------------
+        // Init
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
+
                 if (currentUser.role !== 'administrator') {
+                    showToast('Puslapis pasiekiamas tik administratoriams.', 'error');
                     window.location.href = '../dashboard';
                     return;
                 }
+
+                if (!userId) {
+                    window.location.href = '../users';
+                    return;
+                }
+
                 await loadUser();
             } catch (err) {
                 window.location.href = '/';
             }
         }
 
+        function showEmptyState() {
+            document.getElementById('formWrapper').classList.add('d-none');
+            document.getElementById('infoPanel').classList.add('d-none');
+            document.getElementById('emptyState').classList.remove('d-none');
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
+        async function loadUser() {
+            try {
+                const response = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`, { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (response.status === 404) { showEmptyState(); return; }
+                if (!response.ok) throw new Error('bad status');
+
+                targetUser = await response.json();
+                isSelf = Number(targetUser.user_id) === Number(currentUser.user_id);
+
+                // Tikriname, ar tai paskutinis adminas (jei taip, rolės keisti negalima)
+                await checkIfLastAdmin();
+
+                document.getElementById('name').value = targetUser.name || '';
+                document.getElementById('surname').value = targetUser.surname || '';
+                document.getElementById('role').value = targetUser.role || 'student';
+                document.getElementById('class').value = targetUser.class || '';
+
+                toggleClassField();
+                renderInfoPanel(targetUser);
+                renderWarnings();
+
+                document.getElementById('formWrapper').classList.remove('d-none');
+
+                document.getElementById('role').addEventListener('change', toggleClassField);
+                document.getElementById('editUserForm').addEventListener('submit', handleSubmit);
+
+                if (typeof initCustomSelects === 'function') initCustomSelects();
+            } catch (err) {
+                showToast('Nepavyko užkrauti vartotojo duomenų.', 'error');
+            }
+        }
+
+        async function checkIfLastAdmin() {
+            // Skaičiuojame, kiek yra administratorių
+            try {
+                const res = await fetch(`${API_URL}/api/users`, { credentials: 'include' });
+                if (!res.ok) return;
+                const users = await res.json();
+                const adminCount = (users || []).filter(u => u.role === 'administrator').length;
+                isLastAdmin = targetUser.role === 'administrator' && adminCount <= 1;
+            } catch (err) {
+                // ignoruojame - back-endas vis tiek patikrins
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Info panelė
+        // ------------------------------------------------------------------
+        function renderInfoPanel(user) {
+            document.getElementById('infoPanel').classList.remove('d-none');
+            document.getElementById('infoId').textContent = user.user_id;
+            document.getElementById('infoUsername').textContent = user.username || '–';
+
+            const statusEl = document.getElementById('infoStatus');
+            statusEl.replaceChildren();
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `badge ${user.status || 'active'}`;
+            statusBadge.textContent = user.status === 'pending' ? 'Laukia aktyvavimo' : 'Aktyvus';
+            statusEl.appendChild(statusBadge);
+
+            const regCodeEl = document.getElementById('infoRegCode');
+            if (user.reg_code) {
+                regCodeEl.textContent = user.reg_code;
+                regCodeEl.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+            } else {
+                regCodeEl.textContent = '–';
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Įspėjimai (savęs / paskutinio admino)
+        // ------------------------------------------------------------------
+        function renderWarnings() {
+            const container = document.getElementById('warningsContainer');
+            container.replaceChildren();
+
+            if (isSelf) {
+                const banner = document.createElement('div');
+                banner.className = 'readonly-banner';
+                banner.textContent = '⚠️ Redaguojate savo paskyrą. Rolės keisti negalima.';
+                container.appendChild(banner);
+            }
+
+            if (isLastAdmin) {
+                const banner = document.createElement('div');
+                banner.className = 'readonly-banner danger';
+                banner.textContent = '⚠️ Tai paskutinis administratorius. Rolės keisti negalima.';
+                container.appendChild(banner);
+            }
+
+            // Jei negalima keisti rolės - disable'iname select
+            const roleSelect = document.getElementById('role');
+            if (isSelf || isLastAdmin) {
+                roleSelect.disabled = true;
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // Klasės laukas
+        // ------------------------------------------------------------------
         function toggleClassField() {
             const role = document.getElementById('role').value;
             const classField = document.getElementById('class');
-            if (role === 'student') { 
-                classField.disabled = false; 
-                classField.required = true; 
-            } else { 
-                classField.disabled = true; 
-                classField.required = false; 
-                classField.value = ""; 
+            const wrapper = document.getElementById('classFieldWrapper');
+
+            if (role === 'student') {
+                classField.disabled = false;
+                classField.required = true;
+                wrapper.style.display = '';
+            } else {
+                classField.disabled = true;
+                classField.required = false;
+                classField.value = '';
+                wrapper.style.display = 'none';
             }
         }
 
-        async function loadUser() {
-            try {
-                const response = await fetch(`${API_URL}/api/users/${userId}`, { credentials: 'include' });
-                if (!response.ok) { window.location.href = '../users'; return; }
-                const user = await response.json();
-                
-                document.getElementById('name').value = user.name || '';
-                document.getElementById('surname').value = user.surname || '';
-                
-                const roleSelect = document.getElementById('role');
-                roleSelect.value = user.role || 'student';
-                roleSelect.dispatchEvent(new Event('change', { bubbles: true }));
-
-                document.getElementById('class').value = user.class || '';
-                toggleClassField();
-                if (typeof initCustomSelects === 'function') initCustomSelects();
-            } catch (error) { 
-                showToast("Nepavyko užkrauti vartotojo duomenų.", "error");
-            }
-        }
-
-        document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+        // ------------------------------------------------------------------
+        // Submit
+        // ------------------------------------------------------------------
+        async function handleSubmit(e) {
             e.preventDefault();
-            const data = Object.fromEntries(new FormData(this).entries());
+            if (submitting) return;
+
+            const name = document.getElementById('name').value.trim();
+            const surname = document.getElementById('surname').value.trim();
+            const role = document.getElementById('role').value;
+            const classVal = role === 'student' ? document.getElementById('class').value.trim() : '';
+
+            if (!name || !surname) {
+                showToast('Vardas ir pavardė yra privalomi.', 'error');
+                return;
+            }
+            if (role === 'student' && !classVal) {
+                showToast('Įveskite klasę.', 'error');
+                return;
+            }
+
+            submitting = true;
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saugoma...';
+
             try {
-                const res = await fetch(`${API_URL}/api/users/edit/${userId}`, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    credentials: 'include', 
-                    body: JSON.stringify(data)
+                const res = await fetch(`${API_URL}/api/users/edit/${encodeURIComponent(userId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        name: name,
+                        surname: surname,
+                        role: role,
+                        class: classVal
+                    })
                 });
-                if (res.ok) { 
-                    window.location.href = '../users'; 
-                } else { 
-                    const r = await res.json(); 
-                    showToast(r.message || "Nepavyko išsaugoti pakeitimų.", "error"); 
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast('Pakeitimai išsaugoti!', 'success');
+                    setTimeout(() => { window.location.href = '../users'; }, 600);
+                } else {
+                    showToast(result.message || 'Nepavyko išsaugoti pakeitimų.', 'error');
                 }
             } catch (err) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Išsaugoti';
             }
-        });
+        }
 
-        window.onload = checkAuthAndInit;
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Pagyrimai ir pastabos</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,69 +12,168 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- remarks.html lokalūs stiliai --- */
+        .remarks-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 640px) {
+            .remarks-toolbar { grid-template-columns: 1fr; }
+        }
+
+        .remark-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .remark-type-badge.praise {
+            background: rgba(76, 217, 100, 0.15);
+            color: #2e9e4a;
+        }
+        .remark-type-badge.reprimand {
+            background: rgba(255, 59, 48, 0.15);
+            color: #c0392b;
+        }
+
+        .remark-content-cell {
+            max-width: 420px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .remark-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .remark-actions a,
+        .remark-actions button {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+        .remark-actions a { color: var(--accent-blue, #2563eb); }
+        .remark-actions button.delete { color: #c0392b; }
+        .remark-actions a:hover { background: rgba(37, 99, 235, 0.1); }
+        .remark-actions button.delete:hover { background: rgba(192, 57, 43, 0.1); }
+
+        .actions-forbidden {
+            color: var(--text-muted, #888);
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .add-remark-form .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 640px) {
+            .add-remark-form .form-row { grid-template-columns: 1fr; }
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.8em;
+            color: var(--text-muted, #888);
+            margin-top: 4px;
+        }
+        .char-counter.over { color: #c0392b; font-weight: 600; }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pagyrimai ir pastabos</h1>
 
+        <!-- Mokytojo forma -->
         <div class="card d-none" id="addRemarkCard">
             <h2>Įrašyti pagyrimą arba pastabą</h2>
 
-            <form id="addRemarkForm">
-                <label>Grupė</label>
-                <select name="group_id" id="group_select" onchange="loadStudentsByGroup()" required>
-                    <option value="">-- Pasirinkite grupę --</option>
-                </select>
+            <form id="addRemarkForm" class="add-remark-form" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="group_select">Grupė</label>
+                        <select name="group_id" id="group_select" required>
+                            <option value="">-- Pasirinkite grupę --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="student_select">Mokinys</label>
+                        <select name="student_id" id="student_select" required disabled>
+                            <option value="">-- Pirmiausia pasirinkite grupę --</option>
+                        </select>
+                    </div>
+                </div>
 
-                <label>Mokinys</label>
-                <select name="student_id" id="student_select" required disabled>
-                    <option value="">-- Pirmiausia pasirinkite grupę --</option>
-                </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="type_select">Tipas</label>
+                        <select name="type" id="type_select" required>
+                            <option value="praise">Pagyrimas</option>
+                            <option value="reprimand">Pastaba</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="remark_date">Data</label>
+                        <input type="date" name="date" id="remark_date" required>
+                    </div>
+                </div>
 
-                <label>Tipas</label>
-                <select name="type" required>
-                    <option value="praise">Pagyrimas</option>
-                    <option value="reprimand">Pastaba</option>
-                </select>
+                <div class="form-group">
+                    <label for="remark_content">Turinys</label>
+                    <textarea name="content" id="remark_content" rows="3" maxlength="1000"
+                              placeholder="Įrašykite pastabos ar pagyrimo tekstą..." required></textarea>
+                    <div class="char-counter" id="contentCounter">0 / 1000</div>
+                </div>
 
-                <label>Turinys</label>
-                <textarea name="content" rows="3" placeholder="Turinys..." required></textarea>
-
-                <label>Data</label>
-                <input type="date" name="date" id="remark_date" required>
-
-                <button type="submit" class="btn btn-primary mt-15">Įrašyti</button>
+                <button type="submit" class="btn btn-primary mt-15" id="submitRemarkBtn">Įrašyti</button>
             </form>
         </div>
 
+        <!-- Sąrašas -->
         <div class="card">
             <h2>Įrašų sąrašas</h2>
 
-            <div class="grid-2-cols mb-12">
-                <div>
-                    <label class="mt-0">Filtruoti pagal tipą:</label>
-                    <select id="filter_type" onchange="filterRemarks()">
+            <div class="remarks-toolbar">
+                <div class="form-group">
+                    <label for="filter_type" style="margin-top:0;">Filtruoti pagal tipą</label>
+                    <select id="filter_type">
                         <option value="">-- Visi tipai --</option>
                         <option value="praise">Pagyrimai</option>
                         <option value="reprimand">Pastabos</option>
                     </select>
                 </div>
-                <div>
-                    <label class="mt-0">Paieška (mokinys / turinys / mokytojas):</label>
-                    <input type="text" id="filter_search" placeholder="Įveskite paieškos žodį..." oninput="filterRemarks()">
+                <div class="form-group">
+                    <label for="filter_search" style="margin-top:0;">Paieška</label>
+                    <input type="text" id="filter_search" maxlength="100" autocomplete="off"
+                           placeholder="Mokinys / turinys / mokytojas...">
                 </div>
             </div>
 
             <div class="table-responsive">
                 <table>
                     <thead>
-                        <tr id="remarksTableHeader">
+                        <tr>
                             <th>Mokinys</th>
                             <th>Grupė</th>
                             <th>Tipas</th>
                             <th>Turinys</th>
                             <th>Data</th>
                             <th>Mokytojas</th>
+                            <th id="actionsHeader" class="d-none">Veiksmai</th>
                         </tr>
                     </thead>
                     <tbody id="remarksTableBody"></tbody>
@@ -87,16 +187,28 @@
     <script>
         let currentUser = {};
         let allRemarks = [];
+        let submittingRemark = false;
 
+        // ------------------------------------------------------------------
+        // Prieiga: puslapis tik mokiniams ir mokytojams
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
-                await initPage();
             } catch (err) {
                 window.location.href = '/';
+                return;
             }
+
+            if (currentUser.role !== 'teacher' && currentUser.role !== 'student') {
+                showToast('Puslapis pasiekiamas tik mokiniams ir mokytojams.', 'error');
+                window.location.href = 'dashboard';
+                return;
+            }
+
+            await initPage();
         }
 
         async function initPage() {
@@ -104,13 +216,23 @@
                 document.getElementById('addRemarkCard').classList.remove('d-none');
                 setDefaultDate();
                 await loadTeacherGroups();
+                document.getElementById('group_select').addEventListener('change', loadStudentsByGroup);
+                document.getElementById('remark_content').addEventListener('input', updateContentCounter);
             }
 
             await loadRemarks();
+
+            // Filtrai
+            document.getElementById('filter_type').addEventListener('change', filterRemarks);
+            document.getElementById('filter_search').addEventListener('input', filterRemarks);
+
             if (typeof initCalendarPickers === 'function') initCalendarPickers();
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
+        // ------------------------------------------------------------------
+        // Formos pagalbinės
+        // ------------------------------------------------------------------
         function setDefaultDate() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -122,12 +244,27 @@
             }
         }
 
+        function updateContentCounter() {
+            const textarea = document.getElementById('remark_content');
+            const counter = document.getElementById('contentCounter');
+            const len = textarea.value.length;
+            counter.textContent = `${len} / 1000`;
+            counter.classList.toggle('over', len > 1000);
+        }
+
         async function loadTeacherGroups() {
             try {
-                const response = await fetch(`${API_URL}/api/groups?only_mine=true`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (!response.ok) throw new Error('bad status');
                 const groups = await response.json();
                 const select = document.getElementById('group_select');
-                select.innerHTML = '<option value="">-- Pasirinkite grupę --</option>';
+                select.replaceChildren();
+
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pasirinkite grupę --';
+                select.appendChild(placeholder);
 
                 groups.forEach(g => {
                     const opt = document.createElement('option');
@@ -144,19 +281,37 @@
         async function loadStudentsByGroup() {
             const groupId = document.getElementById('group_select').value;
             const select = document.getElementById('student_select');
+            select.replaceChildren();
 
             if (!groupId) {
-                select.innerHTML = '<option value="">-- Pirmiausia pasirinkite grupę --</option>';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pirmiausia pasirinkite grupę --';
+                select.appendChild(placeholder);
                 select.disabled = true;
                 select.dispatchEvent(new Event('change', { bubbles: true }));
                 return;
             }
 
+            select.disabled = true;
+            const loading = document.createElement('option');
+            loading.value = '';
+            loading.textContent = 'Kraunami mokiniai...';
+            select.appendChild(loading);
+
             try {
-                const response = await fetch(`${API_URL}/get_students_by_group/${groupId}`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/get_students_by_group/${encodeURIComponent(groupId)}`,
+                    { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (!response.ok) throw new Error('bad status');
                 const students = await response.json();
 
-                select.innerHTML = '<option value="">-- Pasirinkite mokinį --</option>';
+                select.replaceChildren();
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pasirinkite mokinį --';
+                select.appendChild(placeholder);
+
                 students.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.user_id;
@@ -166,67 +321,132 @@
                 select.disabled = false;
                 select.dispatchEvent(new Event('change', { bubbles: true }));
             } catch (error) {
+                select.replaceChildren();
+                const errOpt = document.createElement('option');
+                errOpt.value = '';
+                errOpt.textContent = 'Nepavyko užkrauti mokinių.';
+                select.appendChild(errOpt);
                 showToast('Nepavyko užkrauti mokinių.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Įrašų sąrašas (XSS saugus atvaizdavimas)
+        // ------------------------------------------------------------------
         async function loadRemarks() {
             try {
                 const response = await fetch(`${API_URL}/api/remarks`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
-                allRemarks = await response.json();
-                renderRemarks(allRemarks);
+                if (!response.ok) throw new Error('bad status');
+                const data = await response.json();
+                allRemarks = Array.isArray(data) ? data : [];
+                filterRemarks();
             } catch (error) {
                 showToast('Nepavyko užkrauti įrašų sąrašo.', 'error');
             }
         }
 
+        function makeCell(label, child) {
+            const td = document.createElement('td');
+            td.setAttribute('data-label', label);
+            td.appendChild(child);
+            return td;
+        }
+
+        function mutedText(text) {
+            const span = document.createElement('span');
+            span.className = 'text-muted-italic';
+            span.textContent = text;
+            return span;
+        }
+
         function renderRemarks(remarks) {
-            const theader = document.getElementById('remarksTableHeader');
             const tbody = document.getElementById('remarksTableBody');
-            tbody.innerHTML = '';
+            tbody.replaceChildren();
 
             const showActions = currentUser.role === 'teacher';
+            const actionsHeader = document.getElementById('actionsHeader');
+            actionsHeader.classList.toggle('d-none', !showActions);
 
-            if (showActions && !document.getElementById('actionsHeader')) {
-                const th = document.createElement('th');
-                th.id = 'actionsHeader';
-                th.textContent = 'Veiksmai';
-                theader.appendChild(th);
-            }
-
-            if (!Array.isArray(remarks) || remarks.length === 0) {
-                const colSpan = showActions ? 7 : 6;
-                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="empty-row">Įrašų nerasta.</td></tr>`;
+            if (remarks.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = showActions ? 7 : 6;
+                td.className = 'empty-row';
+                td.textContent = allRemarks.length === 0
+                    ? 'Įrašų nerasta.'
+                    : 'Pagal pasirinktus filtrus įrašų nerasta.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
                 return;
             }
 
+            const currentUserId = Number(currentUser.user_id);
+
             remarks.forEach(r => {
                 const tr = document.createElement('tr');
-                const isGroupTeacher = r.group_teachers && r.group_teachers.includes(currentUser.user_id);
 
-                const typeBadge = r.type === 'praise' 
-                    ? '<span style="color: #4cd964; font-weight: bold;">Pagyrimas</span>' 
-                    : '<span style="color: #ff3b30; font-weight: bold;">Pastaba</span>';
+                // Mokinys
+                const studentStrong = document.createElement('strong');
+                studentStrong.textContent = r.student || 'Nežinomas';
+                tr.appendChild(makeCell('Mokinys', studentStrong));
 
-                let rowHtml = `
-                    <td data-label="Mokinys"><strong>${r.student}</strong></td>
-                    <td data-label="Grupė">${r.group_display}</td>
-                    <td data-label="Tipas">${typeBadge}</td>
-                    <td data-label="Turinys">${r.content}</td>
-                    <td data-label="Data">${r.date}</td>
-                    <td data-label="Mokytojas">${r.teacher || '-'}</td>
-                `;
+                // Grupė
+                tr.appendChild(makeCell('Grupė',
+                    document.createTextNode(r.group_display || '-')));
 
+                // Tipas (badge)
+                const badge = document.createElement('span');
+                badge.className = `remark-type-badge ${r.type === 'praise' ? 'praise' : 'reprimand'}`;
+                badge.textContent = r.type === 'praise' ? 'Pagyrimas' : 'Pastaba';
+                tr.appendChild(makeCell('Tipas', badge));
+
+                // Turinys (tekstas, ne HTML!)
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'remark-content-cell';
+                contentDiv.textContent = r.content || '-';
+                tr.appendChild(makeCell('Turinys', contentDiv));
+
+                // Data
+                tr.appendChild(makeCell('Data',
+                    document.createTextNode(r.date || '-')));
+
+                // Mokytojas
+                tr.appendChild(makeCell('Mokytojas',
+                    document.createTextNode(r.teacher || '-')));
+
+                // Veiksmai (tik mokytojams)
                 if (showActions) {
-                    const actionsTd = isGroupTeacher 
-                        ? `<a href="editing/edit_remark?id=${r.remark_id}">Redaguoti</a> | <a href="javascript:void(0);" onclick="deleteRemark(${r.remark_id}); return false;">Ištrinti</a>`
-                        : '<span style="color: var(--text-muted);">Neturite teisių</span>';
-                    
-                    rowHtml += `<td data-label="Veiksmai">${actionsTd}</td>`;
+                    const actions = document.createElement('div');
+                    actions.className = 'remark-actions';
+
+                    const groupTeacherIds = (r.group_teachers || []).map(Number);
+                    const canEdit = groupTeacherIds.includes(currentUserId);
+
+                    if (canEdit) {
+                        const editLink = document.createElement('a');
+                        editLink.href = `editing/edit_remark?id=${encodeURIComponent(r.remark_id)}`;
+                        editLink.textContent = 'Redaguoti';
+                        editLink.setAttribute('aria-label', 'Redaguoti įrašą');
+                        actions.appendChild(editLink);
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.type = 'button';
+                        deleteBtn.className = 'delete';
+                        deleteBtn.textContent = 'Ištrinti';
+                        deleteBtn.setAttribute('aria-label', 'Ištrinti įrašą');
+                        deleteBtn.addEventListener('click', () => deleteRemark(r.remark_id));
+                        actions.appendChild(deleteBtn);
+                    } else {
+                        const forbidden = document.createElement('span');
+                        forbidden.className = 'actions-forbidden';
+                        forbidden.textContent = 'Neturite teisių';
+                        actions.appendChild(forbidden);
+                    }
+
+                    tr.appendChild(makeCell('Veiksmai', actions));
                 }
 
-                tr.innerHTML = rowHtml;
                 tbody.appendChild(tr);
             });
         }
@@ -236,74 +456,101 @@
             const searchText = document.getElementById('filter_search').value.toLowerCase().trim();
 
             const filtered = allRemarks.filter(r => {
-                let match = true;
-                if (filterType && r.type !== filterType) match = false;
+                if (filterType && r.type !== filterType) return false;
                 if (searchText) {
-                    const combined = `${r.student} ${r.group_display} ${r.content} ${r.teacher}`.toLowerCase();
-                    if (!combined.includes(searchText)) match = false;
+                    const combined = `${r.student || ''} ${r.group_display || ''} ${r.content || ''} ${r.teacher || ''}`.toLowerCase();
+                    if (!combined.includes(searchText)) return false;
                 }
-                return match;
+                return true;
             });
 
             renderRemarks(filtered);
         }
 
-        document.addEventListener('submit', async function(e) {
-            if (e.target && e.target.id === 'addRemarkForm') {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const payload = {
-                    student_id: formData.get('student_id'),
-                    group_id: formData.get('group_id'),
-                    type: formData.get('type'),
-                    content: formData.get('content'),
-                    date: formData.get('date')
-                };
+        // ------------------------------------------------------------------
+        // Naujo įrašo kūrimas
+        // ------------------------------------------------------------------
+        document.getElementById('addRemarkForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (submittingRemark) return;
 
-                try {
-                    const response = await fetch(`${API_URL}/api/remarks/add`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(payload)
-                    });
+            const groupId = document.getElementById('group_select').value;
+            const studentId = document.getElementById('student_select').value;
+            const type = document.getElementById('type_select').value;
+            const content = document.getElementById('remark_content').value.trim();
+            const date = document.getElementById('remark_date').value;
 
-                    if (response.ok) {
-                        e.target.reset();
-                        setDefaultDate();
-                        document.getElementById('student_select').disabled = true;
-                        showToast("Įrašas sėkmingai išsaugotas!", "success");
-                        loadRemarks();
-                    } else {
-                        const errResult = await response.json();
-                        showToast(errResult.message || "Nepavyko įrašyti.", "error");
-                    }
-                } catch (error) {
-                    showToast("Nepavyko prisijungti prie serverio.", "error");
+            if (!groupId || !studentId || !type || !content || !date) {
+                showToast('Užpildykite visus laukus.', 'error');
+                return;
+            }
+            if (content.length > 1000) {
+                showToast('Turinys per ilgas (max 1000 simbolių).', 'error');
+                return;
+            }
+
+            submittingRemark = true;
+            const submitBtn = document.getElementById('submitRemarkBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saugoma...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/remarks/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        group_id: groupId,
+                        student_id: studentId,
+                        type: type,
+                        content: content,
+                        date: date
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (response.ok) {
+                    this.reset();
+                    setDefaultDate();
+                    document.getElementById('student_select').disabled = true;
+                    updateContentCounter();
+                    showToast('Įrašas sėkmingai išsaugotas!', 'success');
+                    await loadRemarks();
+                } else {
+                    showToast(result.message || 'Nepavyko įrašyti.', 'error');
                 }
+            } catch (error) {
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submittingRemark = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Įrašyti';
             }
         });
 
+        // ------------------------------------------------------------------
+        // Trynimas
+        // ------------------------------------------------------------------
         async function deleteRemark(remarkId) {
             if (!confirm('Ar tikrai norite ištrinti šį įrašą?')) return;
             try {
-                const response = await fetch(`${API_URL}/api/remarks/delete/${remarkId}`, {
+                const response = await fetch(`${API_URL}/api/remarks/delete/${encodeURIComponent(remarkId)}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
-
                 if (response.ok) {
-                    showToast("Įrašas ištrintas.", "success");
-                    loadRemarks();
+                    showToast('Įrašas ištrintas.', 'success');
+                    await loadRemarks();
                 } else {
-                    showToast("Nepavyko ištrinti įrašo.", "error");
+                    const result = await response.json().catch(() => ({}));
+                    showToast(result.message || 'Nepavyko ištrinti įrašo.', 'error');
                 }
             } catch (error) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
             }
         }
 
-        window.onload = checkAuthAndInit;
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>
