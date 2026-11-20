@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Grupės</title>
-    <link rel="icon" href="favicon.ico">
-    <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
-    <link rel="stylesheet" href="static/styles/style.css">
-    <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/config.js" defer></script>
-    <script src="static/js/calendar.js" defer></script>
-    <script src="static/js/select.js" defer></script>
-    <script src="static/js/toast.js" defer></script>
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="manifest" href="/static/pwa/manifest.json">
+    <script src="/static/js/config.js" defer></script>
+    <script src="/static/js/calendar.js" defer></script>
+    <script src="/static/js/select.js" defer></script>
+    <script src="/static/js/toast.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -21,7 +21,7 @@
             <h2>Mano grupės</h2>
 
             <div class="mb-20">
-                <a href="creating/create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
+                <a href="/creating/create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
             </div>
 
             <div class="groups-toolbar">
@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -74,7 +74,7 @@
 
             if (currentUser.role !== 'teacher') {
                 showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
-                setTimeout(() => { window.location.href = 'dashboard'; }, 1200);
+                setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
                 return;
             }
 
@@ -145,6 +145,26 @@
             return span;
         }
 
+        function buildEmptyState(td) {
+            const wrap = document.createElement('div');
+            wrap.className = 'empty-state';
+
+            const icon = document.createElement('div');
+            icon.className = 'empty-icon';
+            icon.textContent = '🏫';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = 'Grupių dar nėra';
+
+            const p = document.createElement('p');
+            p.textContent = 'Paspauskite „Sukurti naują grupę“, kad sukurtumėte pirmąją grupę.';
+
+            wrap.appendChild(icon);
+            wrap.appendChild(h3);
+            wrap.appendChild(p);
+            td.appendChild(wrap);
+        }
+
         function renderGroups(groups, emptyMessage) {
             const tbody = document.getElementById('groupsTableBody');
             tbody.replaceChildren();
@@ -154,7 +174,13 @@
                 const td = document.createElement('td');
                 td.colSpan = 4;
                 td.className = 'empty-row';
-                td.textContent = emptyMessage;
+
+                if (allGroups.length === 0) {
+                    buildEmptyState(td);
+                } else {
+                    td.textContent = emptyMessage;
+                }
+
                 tr.appendChild(td);
                 tbody.appendChild(tr);
                 return;
@@ -180,7 +206,7 @@
                 actions.className = 'group-actions';
 
                 const editLink = document.createElement('a');
-                editLink.href = `editing/edit_group?id=${encodeURIComponent(g.group_id)}`;
+                editLink.href = `/editing/edit_group?id=${encodeURIComponent(g.group_id)}`;
                 editLink.textContent = 'Redaguoti';
                 editLink.setAttribute('aria-label', `Redaguoti grupę ${g.group_name}`);
                 actions.appendChild(editLink);

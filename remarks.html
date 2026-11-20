@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Pagyrimai ir pastabos</title>
-    <link rel="icon" href="favicon.ico">
-    <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
-    <link rel="stylesheet" href="static/styles/style.css">
-    <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/config.js" defer></script>
-    <script src="static/js/calendar.js" defer></script>
-    <script src="static/js/select.js" defer></script>
-    <script src="static/js/toast.js" defer></script>
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="manifest" href="/static/pwa/manifest.json">
+    <script src="/static/js/config.js" defer></script>
+    <script src="/static/js/calendar.js" defer></script>
+    <script src="/static/js/select.js" defer></script>
+    <script src="/static/js/toast.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -98,7 +98,7 @@
             </div>
         </div>
 
-        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -118,7 +118,7 @@
 
             if (currentUser.role !== 'teacher' && currentUser.role !== 'student') {
                 showToast('Puslapis pasiekiamas tik mokiniams ir mokytojams.', 'error');
-                window.location.href = 'dashboard';
+                window.location.href = '/dashboard';
                 return;
             }
 
@@ -260,11 +260,26 @@
             return td;
         }
 
-        function mutedText(text) {
-            const span = document.createElement('span');
-            span.className = 'text-muted-italic';
-            span.textContent = text;
-            return span;
+        function buildEmptyState(td, colSpan) {
+            const wrap = document.createElement('div');
+            wrap.className = 'empty-state';
+
+            const icon = document.createElement('div');
+            icon.className = 'empty-icon';
+            icon.textContent = '⭐';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = 'Įrašų dar nėra';
+
+            const p = document.createElement('p');
+            p.textContent = currentUser.role === 'teacher'
+                ? 'Sukurkite pirmąjį pagyrimą arba pastabą naudodamiesi forma aukščiau.'
+                : 'Kai mokytojai įrašys pagyrimus ar pastabas, jie atsiras čia.';
+
+            wrap.appendChild(icon);
+            wrap.appendChild(h3);
+            wrap.appendChild(p);
+            td.appendChild(wrap);
         }
 
         function renderRemarks(remarks) {
@@ -275,14 +290,20 @@
             const actionsHeader = document.getElementById('actionsHeader');
             actionsHeader.classList.toggle('d-none', !showActions);
 
+            const colSpan = showActions ? 7 : 6;
+
             if (remarks.length === 0) {
                 const tr = document.createElement('tr');
                 const td = document.createElement('td');
-                td.colSpan = showActions ? 7 : 6;
+                td.colSpan = colSpan;
                 td.className = 'empty-row';
-                td.textContent = allRemarks.length === 0
-                    ? 'Įrašų nerasta.'
-                    : 'Pagal pasirinktus filtrus įrašų nerasta.';
+
+                if (allRemarks.length === 0) {
+                    buildEmptyState(td, colSpan);
+                } else {
+                    td.textContent = 'Pagal pasirinktus filtrus įrašų nerasta.';
+                }
+
                 tr.appendChild(td);
                 tbody.appendChild(tr);
                 return;
@@ -325,7 +346,7 @@
 
                     if (canEdit) {
                         const editLink = document.createElement('a');
-                        editLink.href = `editing/edit_remark?id=${encodeURIComponent(r.remark_id)}`;
+                        editLink.href = `/editing/edit_remark?id=${encodeURIComponent(r.remark_id)}`;
                         editLink.textContent = 'Redaguoti';
                         editLink.setAttribute('aria-label', 'Redaguoti įrašą');
                         actions.appendChild(editLink);

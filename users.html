@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Vartotojai</title>
-    <link rel="icon" href="favicon.ico">
-    <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
-    <link rel="stylesheet" href="static/styles/style.css">
-    <link rel="manifest" href="static/pwa/manifest.json">
-    <script src="static/js/config.js" defer></script>
-    <script src="static/js/calendar.js" defer></script>
-    <script src="static/js/select.js" defer></script>
-    <script src="static/js/toast.js" defer></script>
+    <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="manifest" href="/static/pwa/manifest.json">
+    <script src="/static/js/config.js" defer></script>
+    <script src="/static/js/calendar.js" defer></script>
+    <script src="/static/js/select.js" defer></script>
+    <script src="/static/js/toast.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -117,7 +117,7 @@
 
             if (currentUser.role !== 'administrator') {
                 showToast('Puslapis pasiekiamas tik administratoriams.', 'error');
-                window.location.href = 'dashboard';
+                window.location.href = '/dashboard';
                 return;
             }
 
@@ -195,6 +195,26 @@
             return td;
         }
 
+        function buildEmptyState(td) {
+            const wrap = document.createElement('div');
+            wrap.className = 'empty-state';
+
+            const icon = document.createElement('div');
+            icon.className = 'empty-icon';
+            icon.textContent = '👥';
+
+            const h3 = document.createElement('h3');
+            h3.textContent = 'Vartotojų dar nėra';
+
+            const p = document.createElement('p');
+            p.textContent = 'Sukurkite pirmąjį vartotoją naudodamiesi forma aukščiau.';
+
+            wrap.appendChild(icon);
+            wrap.appendChild(h3);
+            wrap.appendChild(p);
+            td.appendChild(wrap);
+        }
+
         function renderUsers(users) {
             const tbody = document.getElementById('usersTableBody');
             tbody.replaceChildren();
@@ -204,9 +224,13 @@
                 const td = document.createElement('td');
                 td.colSpan = 7;
                 td.className = 'empty-row';
-                td.textContent = allUsers.length === 0
-                    ? 'Vartotojų nerasta.'
-                    : 'Pagal pasirinktus filtrus vartotojų nerasta.';
+
+                if (allUsers.length === 0) {
+                    buildEmptyState(td);
+                } else {
+                    td.textContent = 'Pagal pasirinktus filtrus vartotojų nerasta.';
+                }
+
                 tr.appendChild(td);
                 tbody.appendChild(tr);
                 return;
@@ -268,7 +292,7 @@
                 actions.className = 'user-actions';
 
                 const editLink = document.createElement('a');
-                editLink.href = `editing/edit_user?id=${encodeURIComponent(u.user_id)}`;
+                editLink.href = `/editing/edit_user?id=${encodeURIComponent(u.user_id)}`;
                 editLink.textContent = 'Redaguoti';
                 actions.appendChild(editLink);
 
@@ -350,7 +374,6 @@
                     toggleClassField();
                     await loadUsers();
 
-                    // Vietoj viršutinio pranešimo - toast'as su reg. kodu
                     if (result.reg_code) {
                         showToast(`Sukurtas vartotojas. Reg. kodas: ${result.reg_code}`, 'success', 8000);
                     } else {
