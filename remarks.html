@@ -17,6 +17,9 @@
     <div class="container">
         <h1>Pagyrimai ir pastabos</h1>
 
+        <!-- Statistikos kortelės -->
+        <div class="stats-row" id="statsRow"></div>
+
         <div class="card d-none" id="addRemarkCard">
             <h2>Įrašyti pagyrimą arba pastabą</h2>
 
@@ -247,10 +250,45 @@
                 if (!response.ok) throw new Error('bad status');
                 const data = await response.json();
                 allRemarks = Array.isArray(data) ? data : [];
+                renderStats();
                 filterRemarks();
             } catch (error) {
                 showToast('Nepavyko užkrauti įrašų sąrašo.', 'error');
             }
+        }
+
+        // ------------------------------------------------------------------
+        // Statistika
+        // ------------------------------------------------------------------
+        function renderStats() {
+            const container = document.getElementById('statsRow');
+            container.replaceChildren();
+
+            const praises = allRemarks.filter(r => r.type === 'praise').length;
+            const reprimands = allRemarks.filter(r => r.type === 'reprimand').length;
+
+            const stats = [
+                { label: 'Pagyrimai', value: praises, cls: 'stat-present' },
+                { label: 'Pastabos', value: reprimands, cls: 'stat-absent' },
+                { label: 'Iš viso', value: allRemarks.length, cls: '' }
+            ];
+
+            stats.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'stat-card' + (s.cls ? ' ' + s.cls : '');
+
+                const label = document.createElement('div');
+                label.className = 'stat-label';
+                label.textContent = s.label;
+
+                const value = document.createElement('div');
+                value.className = 'stat-value';
+                value.textContent = String(s.value);
+
+                card.appendChild(label);
+                card.appendChild(value);
+                container.appendChild(card);
+            });
         }
 
         function makeCell(label, child) {
@@ -260,7 +298,7 @@
             return td;
         }
 
-        function buildEmptyState(td, colSpan) {
+        function buildEmptyState(td) {
             const wrap = document.createElement('div');
             wrap.className = 'empty-state';
 
@@ -299,7 +337,7 @@
                 td.className = 'empty-row';
 
                 if (allRemarks.length === 0) {
-                    buildEmptyState(td, colSpan);
+                    buildEmptyState(td);
                 } else {
                     td.textContent = 'Pagal pasirinktus filtrus įrašų nerasta.';
                 }
