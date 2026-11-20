@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Profilis</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,29 +12,77 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- profile.html lokalūs stiliai --- */
+        .profile-section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .profile-section:last-of-type {
+            border-bottom: none;
+        }
+        .profile-section h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Profilis</h1>
 
         <div class="card">
-            <h2>Keisti asmeninius duomenis</h2>
+            <h2>Mano duomenys</h2>
 
-            <form id="profileForm">
-                <label>Vardas Pavardė</label>
-                <input type="text" id="fullname" disabled class="readonly-input">
+            <form id="profileForm" novalidate>
+                <div class="form-group">
+                    <label for="fullname">Vardas Pavardė</label>
+                    <input type="text" id="fullname" class="readonly-input" readonly disabled>
+                </div>
 
-                <label>Prisijungimo vardas</label>
-                <input type="text" name="username" id="username" required>
+                <div class="profile-section">
+                    <h3>Prisijungimo duomenys</h3>
 
-                <label>El. paštas</label>
-                <input type="text" name="email" id="email" required>
+                    <div class="form-group">
+                        <label for="username">Prisijungimo vardas</label>
+                        <input type="text" name="username" id="username"
+                               maxlength="30" minlength="3" autocomplete="username" required>
+                        <div class="hint-text">3–30 lotyniškos raidės ir skaičiai.</div>
+                    </div>
 
-                <label>Naujas slaptažodis (palikite tuščią, jei nekeičiate)</label>
-                <input type="password" name="password" id="password" placeholder="Naujas slaptažodis...">
+                    <div class="form-group">
+                        <label for="email">El. paštas</label>
+                        <input type="email" name="email" id="email"
+                               maxlength="120" autocomplete="email" required>
+                    </div>
+                </div>
 
-                <button type="submit" class="btn btn-primary mt-15">Išsaugoti</button>
+                <div class="profile-section">
+                    <h3>Slaptažodžio keitimas</h3>
+                    <p class="hint-text" style="margin-bottom:12px;">
+                        Palikite tuščią, jei nenorite keisti slaptažodžio.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="password">Naujas slaptažodis</label>
+                        <input type="password" name="password" id="password"
+                               maxlength="128" minlength="8"
+                               autocomplete="new-password" placeholder="Naujas slaptažodis...">
+                        <div class="hint-text">Bent 8 simboliai.</div>
+                    </div>
+
+                    <div class="form-group d-none" id="password2Wrapper">
+                        <label for="password2">Pakartokite naują slaptažodį</label>
+                        <input type="password" id="password2"
+                               maxlength="128" minlength="8"
+                               autocomplete="new-password" placeholder="Pakartokite...">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-15" id="saveBtn">Išsaugoti</button>
             </form>
+
             <br>
             <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
         </div>
@@ -41,14 +90,19 @@
 
     <script>
         let currentUser = {};
+        let submitting = false;
 
+        // ------------------------------------------------------------------
+        // Krovimas
+        // ------------------------------------------------------------------
         async function loadProfile() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
-                document.getElementById('fullname').value = `${currentUser.name} ${currentUser.surname}`;
+                document.getElementById('fullname').value =
+                    `${currentUser.name || ''} ${currentUser.surname || ''}`.trim();
                 document.getElementById('username').value = currentUser.username || '';
                 document.getElementById('email').value = currentUser.email || '';
             } catch (err) {
@@ -56,31 +110,87 @@
             }
         }
 
-        document.getElementById('profileForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // ------------------------------------------------------------------
+        // Slaptažodžio lauko atskleidimas
+        // ------------------------------------------------------------------
+        document.getElementById('password').addEventListener('input', function () {
+            const wrapper = document.getElementById('password2Wrapper');
+            const password2 = document.getElementById('password2');
 
-            const data = Object.fromEntries(new FormData(this).entries());
+            if (this.value.length > 0) {
+                wrapper.classList.remove('d-none');
+                password2.required = true;
+            } else {
+                wrapper.classList.add('d-none');
+                password2.required = false;
+                password2.value = '';
+            }
+        });
+
+        // ------------------------------------------------------------------
+        // Submit
+        // ------------------------------------------------------------------
+        document.getElementById('profileForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (submitting) return;
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const password2 = document.getElementById('password2').value;
+
+            // Validacija
+            if (!username || !email) {
+                showToast('Užpildykite vartotojo vardą ir el. paštą.', 'error');
+                return;
+            }
+            if (password) {
+                if (password.length < 8) {
+                    showToast('Slaptažodis turi būti bent 8 simbolių.', 'error');
+                    return;
+                }
+                if (password !== password2) {
+                    showToast('Slaptažodžiai nesutampa.', 'error');
+                    return;
+                }
+            }
+
+            submitting = true;
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saugoma...';
+
             try {
+                const payload = { username, email };
+                if (password) payload.password = password;
+
                 const res = await fetch(`${API_URL}/api/profile/update`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await res.json();
+                const result = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    showToast("Profilio duomenys sėkmingai atnaujinti!", "success");
+                    showToast('Profilio duomenys sėkmingai atnaujinti!', 'success');
                     document.getElementById('password').value = '';
+                    document.getElementById('password2').value = '';
+                    document.getElementById('password2Wrapper').classList.add('d-none');
+                    document.getElementById('password2').required = false;
                 } else {
-                    showToast(result.message || "Nepavyko išsaugoti.", "error");
+                    showToast(result.message || 'Nepavyko išsaugoti.', 'error');
                 }
             } catch (err) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Išsaugoti';
             }
         });
 
-        window.onload = loadProfile;
+        window.addEventListener('load', loadProfile);
     </script>
 </body>
 </html>

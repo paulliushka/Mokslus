@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -14,86 +15,127 @@
 </head>
 <body>
     <div class="container">
-        <!-- Viršutinė stilinga juosta pagal tavo styles.css -->
         <div class="dashboard-header">
             <div class="user-welcome">
                 <h2 id="welcomeTitle">Mokslus sistema</h2>
             </div>
             <div class="dashboard-right">
                 <span id="roleBadge" class="badge-role"></span>
-                <a href="javascript:void(0);" onclick="logout()" class="logout-btn">Atsijungti</a>
+                <button type="button" class="logout-btn" id="logoutBtn"
+                        aria-label="Atsijungti nuo sistemos">Atsijungti</button>
             </div>
         </div>
 
-        <!-- Kortelių tinklelis pagal tavo .grid-container ir .nav-card klases -->
         <div id="navGrid" class="grid-container"></div>
     </div>
 
     <script>
+        const ROLE_LABELS = {
+            student: 'Mokinys',
+            teacher: 'Mokytojas',
+            administrator: 'Administratorius'
+        };
+
+        const LINKS_BY_ROLE = {
+            administrator: [
+                { href: 'users', title: 'Vartotojų valdymas',
+                  desc: 'Kurkite naujus vartotojus ir generuokite registracijos kodus.', icon: '👥' }
+            ],
+            teacher: [
+                { href: 'timetables', title: 'Tvarkaraščiai',
+                  desc: 'Pamokų eiliškumas, kabinetai ir mokytojų pavadavimai.', icon: '📅' },
+                { href: 'groups', title: 'Grupės',
+                  desc: 'Mokinių ir mokytojų grupių valdymas bei sąrašai.', icon: '🏫' },
+                { href: 'lessons', title: 'Pamokų žurnalas',
+                  desc: 'Klasės darbai, namų darbai, lankomumas ir pažymiai.', icon: '📖' },
+                { href: 'remarks', title: 'Pagyrimai ir pastabos',
+                  desc: 'Mokinių drausmės įrašai, pastabos ir pagyrimai.', icon: '⭐' }
+            ],
+            student: [
+                { href: 'timetables', title: 'Tvarkaraštis',
+                  desc: 'Jūsų savaitės pamokų tvarkaraštis ir kabinetai.', icon: '📅' },
+                { href: 'grades', title: 'Pažymiai',
+                  desc: 'Gauti įvertinimai, kontroliniai darbai ir komentarai.', icon: '📊' },
+                { href: 'assignments', title: 'Namų darbai',
+                  desc: 'Aktyvios namų darbų užduotys ir jų atlikimo terminai.', icon: '📝' },
+                { href: 'attendance', title: 'Lankomumas',
+                  desc: 'Praleistos pamokos, vėlavimai ir lankomumo suvestinė.', icon: '📋' },
+                { href: 'remarks', title: 'Pagyrimai ir pastabos',
+                  desc: 'Mokytojų pastabos ir pagyrimai jums.', icon: '⭐' }
+            ]
+        };
+
+        function createNavCard(link) {
+            const card = document.createElement('a');
+            card.href = link.href;
+            card.className = 'nav-card';
+            card.setAttribute('aria-label', link.title);
+
+            const wrap = document.createElement('div');
+
+            const icon = document.createElement('div');
+            icon.className = 'nav-card-icon';
+            icon.textContent = link.icon || '';
+
+            const title = document.createElement('h3');
+            title.textContent = link.title || '';
+
+            const desc = document.createElement('p');
+            desc.textContent = link.desc || '';
+
+            wrap.appendChild(icon);
+            wrap.appendChild(title);
+            wrap.appendChild(desc);
+            card.appendChild(wrap);
+
+            return card;
+        }
+
         async function init() {
             try {
                 const res = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
-                if (!res.ok) { window.location.href = '/'; return; }
+                if (!res.ok) { window.location.replace('/'); return; }
                 const user = await res.json();
 
-                document.getElementById('welcomeTitle').textContent = `Sveikas, ${user.name} ${user.surname}`;
-                document.getElementById('roleBadge').textContent = user.role;
+                document.getElementById('welcomeTitle').textContent =
+                    `Sveikas, ${user.name || ''} ${user.surname || ''}`.trim();
+
+                const roleBadge = document.getElementById('roleBadge');
+                roleBadge.textContent = ROLE_LABELS[user.role] || user.role || '';
 
                 const grid = document.getElementById('navGrid');
-                grid.innerHTML = '';
+                grid.replaceChildren();
 
-                let links = [];
+                const roleLinks = LINKS_BY_ROLE[user.role] || [];
+                const allLinks = [...roleLinks, {
+                    href: 'profile',
+                    title: 'Mano profilis',
+                    desc: 'Tvarkykite savo paskyros duomenis ir slaptažodį.',
+                    icon: '⚙️'
+                }];
 
-                if (user.role === 'administrator') {
-                    // Administratorius mato tik vartotojų valdymą
-                    links = [
-                        { href: 'users', title: 'Vartotojų valdymas', desc: 'Kurkite naujus vartotojus ir generuokite registracijos kodus.', icon: '👥' }
-                    ];
-                } else if (user.role === 'teacher') {
-                    links = [
-                        { href: 'timetables', title: 'Tvarkaraščiai', desc: 'Pamokų eiliškumas, kabinetai ir mokytojų pavadavimai.', icon: '📅' },
-                        { href: 'groups', title: 'Grupės', desc: 'Mokinių ir mokytojų grupių valdymas bei sąrašai.', icon: '🏫' },
-                        { href: 'lessons', title: 'Pamokų žurnalas', desc: 'Klasės darbai, namų darbai, lankomumas ir pažymiai.', icon: '📖' },
-                        { href: 'remarks', title: 'Pagyrimai ir pastabos', desc: 'Mokinių drausmės įrašai, pastabos ir pagyrimai.', icon: '⭐' }
-                    ];
-                } else if (user.role === 'student') {
-                    links = [
-                        { href: 'timetables', title: 'Tvarkaraštis', desc: 'Jūsų savaitės pamokų tvarkaraštis ir kabinetai.', icon: '📅' },
-                        { href: 'grades', title: 'Pažymiai', desc: 'Gauti įvertinimai, kontroliniai darbai ir komentarai.', icon: '📊' },
-                        { href: 'assignments', title: 'Namų darbai', desc: 'Aktyvios namų darbų užduotys ir jų atlikimo terminai.', icon: '📝' },
-                        { href: 'attendance', title: 'Lankomumas', desc: 'Praleistos pamokos, vėlavimai ir lankomumo suvestinė.', icon: '📋' },
-                        { href: 'remarks', title: 'Pagyrimai ir pastabos', desc: 'Mokytojų pastabos ir pagyrimai jums.', icon: '⭐' }
-                    ];
-                }
-
-                // Profilis prieinamas visiems
-                links.push({ href: 'profile', title: 'Mano profilis', desc: 'Tvarkykite savo paskyros duomenis ir slaptažodį.', icon: '⚙️' });
-
-                links.forEach(l => {
-                    const card = document.createElement('a');
-                    card.href = l.href;
-                    card.className = 'nav-card';
-                    card.innerHTML = `
-                        <div>
-                            <div class="nav-card-icon">${l.icon}</div>
-                            <h3>${l.title}</h3>
-                            <p>${l.desc}</p>
-                        </div>
-                    `;
-                    grid.appendChild(card);
+                allLinks.forEach(link => {
+                    grid.appendChild(createNavCard(link));
                 });
-
             } catch (err) {
-                window.location.href = '/';
+                window.location.replace('/');
             }
         }
 
-        async function logout() {
-            await fetch(`${API_URL}/api/logout`, { method: 'POST', credentials: 'include' });
-            window.location.href = '/';
-        }
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('logoutBtn');
+            btn.disabled = true;
+            btn.textContent = 'Atsijungiama...';
+            try {
+                await fetch(`${API_URL}/api/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } catch (e) { /* ignoruojame */ }
+            window.location.replace('/');
+        });
 
-        window.onload = init;
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

@@ -1,43 +1,63 @@
 /* ==========================================================================
    CUSTOM SELECT KOMPONENTAS
-   Pakeičia standartinį HTML <select> į pritaikytą dizainą ir palaiko
-   automatinį sinchronizavimą su formos reset / kaita.
+   - Saugus (textContent, ne innerHTML)
+   - Vienas globalus document click listener
+   - MutationObserver su apsauga nuo loop
+   - Destroy metodas (jei reikia)
    ========================================================================== */
+
+// Globalus click listener - registruojamas vieną kartą
+let globalSelectClickHandler = null;
 
 class CustomSelect {
     constructor(selectElement) {
         this.select = selectElement;
+        this.wrapper = null;
+        this.trigger = null;
+        this.optionsContainer = null;
+        this.observer = null;
         this.init();
     }
 
     init() {
-        // Slėpti originalų HTML select
+        // Slėpti originalų select
         this.select.style.display = 'none';
 
-        // Kurti pagrindinį wrapper konteinerį
+        // Wrapper
         this.wrapper = document.createElement('div');
         this.wrapper.className = 'custom-select-wrapper';
         this.select.parentNode.insertBefore(this.wrapper, this.select);
         this.wrapper.appendChild(this.select);
 
-        // Sukurti matomą mygtuką/lauką
+        // Trigger
         this.trigger = document.createElement('div');
         this.trigger.className = 'custom-select-trigger';
+        this.trigger.setAttribute('role', 'button');
+        this.trigger.setAttribute('tabindex', '0');
         this.wrapper.appendChild(this.trigger);
 
-        // Sukurti pasirinkimų sąrašo konteinerį
+        // Options
         this.optionsContainer = document.createElement('div');
         this.optionsContainer.className = 'custom-select-options';
+        this.optionsContainer.setAttribute('role', 'listbox');
         this.wrapper.appendChild(this.optionsContainer);
 
         this.render();
         this.bindEvents();
 
-        // Stebėti originalaus select vaikus (optgroup/option) ir neįgalumo būseną
-        const observer = new MutationObserver(() => this.render());
-        observer.observe(this.select, { childList: true, attributes: true, attributeFilter: ['disabled'] });
+        // MutationObserver - saugus nuo loop
+        this._isRendering = false;
+        this.observer = new MutationObserver(() => {
+            if (this._isRendering) return;
+            this.render();
+        });
+        this.observer.observe(this.select, {
+            childList: true,
+            attributes: true,
+            attributeFilter: ['disabled', 'multiple']
+        });
 
-        // Stebėti formos reset įvykį, kad neliktų senų "ghost" reikšmių
+        // Form reset
         if (this.select.form) {
             this.select.form.addEventListener('reset', () => {
                 setTimeout(() => this.render(), 0);
@@ -46,73 +66,149 @@ class CustomSelect {
     }
 
     render() {
-        this.optionsContainer.innerHTML = '';
-        
-        const selectedOption = this.select.options[this.select.selectedIndex] || this.select.options[0];
-        const displayText = selectedOption ? selectedOption.textContent : '-- Pasirinkite --';
-        
-        this.trigger.innerHTML = `
-            <span>${displayText}</span>
-            <i class="custom-select-arrow"></i>
-        `;
+        if (this._isRendering) return;
+        this._isRendering = true;
 
-        if (this.select.disabled) {
-            this.wrapper.classList.add('disabled');
-            this.wrapper.style.opacity = '0.6';
-            this.wrapper.style.pointerEvents = 'none';
-        } else {
-            this.wrapper.classList.remove('disabled');
-            this.wrapper.style.opacity = '1';
-            this.wrapper.style.pointerEvents = 'auto';
-        }
+        try {
+            // Išvalome options
+            this.optionsContainer.replaceChildren();
 
-        Array.from(this.select.options).forEach((opt, index) => {
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'custom-select-option';
-            if (opt.disabled) optionDiv.classList.add('disabled');
-            if (index === this.select.selectedIndex) optionDiv.classList.add('selected');
-            
-            optionDiv.textContent = opt.textContent;
-            optionDiv.dataset.value = opt.value;
+            // Pasirinkto teksto
+            const selectedOption = this.select.options[this.select.selectedIndex] || this.select.options[0];
+            const displayText = selectedOption ? selectedOption.textContent : '-- Pasirinkite --';
 
-            optionDiv.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (opt.disabled) return;
+            // Saugus trigger'io turinys
+            this.trigger.replaceChildren();
+            const textSpan = document.createElement('span');
+            textSpan.textContent = displayText;
+            this.trigger.appendChild(textSpan);
+            const arrow = document.createElement('i');
+            arrow.className = 'custom-select-arrow';
+            this.trigger.appendChild(arrow);
 
-                this.select.selectedIndex = index;
-                this.select.dispatchEvent(new Event('change', { bubbles: true }));
-                this.wrapper.classList.remove('open');
-                this.render();
+            // Disabled
+            if (this.select.disabled) {
+                this.wrapper.classList.add('disabled');
+                this.trigger.setAttribute('aria-disabled', 'true');
+                this.trigger.setAttribute('tabindex', '-1');
+            } else {
+                this.wrapper.classList.remove('disabled');
+                this.trigger.removeAttribute('aria-disabled');
+                this.trigger.setAttribute('tabindex', '0');
+            }
+
+            // Options
+            Array.from(this.select.options).forEach((opt, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'custom-select-option';
+                optionDiv.setAttribute('role', 'option');
+                if (opt.disabled) {
+                    optionDiv.classList.add('disabled');
+                    optionDiv.setAttribute('aria-disabled', 'true');
+                }
+                if (index === this.select.selectedIndex) {
+                    optionDiv.classList.add('selected');
+                    optionDiv.setAttribute('aria-selected', 'true');
+                }
+                optionDiv.textContent = opt.textContent;
+                optionDiv.dataset.value = opt.value;
+
+                optionDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+
+                    this.select.selectedIndex = index;
+                    this.select.dispatchEvent(new Event('change', { bubbles: true }));
+                    this.wrapper.classList.remove('open');
+                    this.render();
+                });
+
+                this.optionsContainer.appendChild(optionDiv);
             });
-
-            this.optionsContainer.appendChild(optionDiv);
-        });
+        } finally {
+            this._isRendering = false;
+        }
     }
 
     bindEvents() {
-        this.trigger.addEventListener('click', (e) => {
+        // Atidaryti/uždaryti
+        const toggle = (e) => {
             e.stopPropagation();
             if (this.select.disabled) return;
 
-            document.querySelectorAll('.custom-select-wrapper').forEach(w => {
-                if (w !== this.wrapper) w.classList.remove('open');
-            });
-            this.wrapper.classList.toggle('open');
-        });
+            const isOpen = this.wrapper.classList.contains('open');
+            this.closeAll();
 
-        // Uždaryti meniu paspaudus už jo ribų
-        document.addEventListener('click', (e) => {
-            if (!this.wrapper.contains(e.target)) {
+            if (!isOpen) {
+                this.wrapper.classList.add('open');
+            }
+        };
+
+        this.trigger.addEventListener('click', toggle);
+        this.trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle(e);
+            } else if (e.key === 'Escape') {
                 this.wrapper.classList.remove('open');
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                this.moveSelection(1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.moveSelection(-1);
             }
         });
 
-        // Užfiksuoti programinius `change` įvykius
+        // Globalus click - registruojamas vieną kartą
+        if (!globalSelectClickHandler) {
+            globalSelectClickHandler = () => {
+                document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+                    w.classList.remove('open');
+                });
+            };
+            document.addEventListener('click', globalSelectClickHandler);
+        }
+
+        // Sinchronizacija
         this.select.addEventListener('change', () => this.render());
+    }
+
+    moveSelection(direction) {
+        const options = Array.from(this.select.options);
+        if (options.length === 0) return;
+
+        let newIndex = this.select.selectedIndex + direction;
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= options.length) newIndex = options.length - 1;
+
+        if (options[newIndex] && !options[newIndex].disabled) {
+            this.select.selectedIndex = newIndex;
+            this.select.dispatchEvent(new Event('change', { bubbles: true }));
+            this.render();
+        }
+    }
+
+    closeAll() {
+        document.querySelectorAll('.custom-select-wrapper.open').forEach(w => {
+            if (w !== this.wrapper) w.classList.remove('open');
+        });
+    }
+
+    destroy() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+        if (this.wrapper && this.wrapper.parentNode) {
+            // Grąžiname select į pradinę vietą
+            this.wrapper.parentNode.insertBefore(this.select, this.wrapper);
+            this.wrapper.parentNode.removeChild(this.wrapper);
+        }
+        this.select.style.display = '';
+        this.select.classList.remove('custom-select-initialized');
     }
 }
 
-// Inicializacijos funkcija visiems neaktyvuotiems select elementams
 function initCustomSelects() {
     document.querySelectorAll('select').forEach(select => {
         if (!select.classList.contains('custom-select-initialized')) {

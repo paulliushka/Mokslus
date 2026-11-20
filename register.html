@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Registracija</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -17,46 +18,79 @@
         <h1>Registracija</h1>
         <p class="mb-16">Įveskite mokyklos suteiktą registracijos kodą.</p>
 
-        <form id="codeForm" onsubmit="handleVerifyCode(event)">
+        <!-- 1 žingsnis: kodo tikrinimas -->
+        <form id="codeForm" novalidate>
             <div class="form-group">
                 <label for="regCode">Registracijos kodas</label>
-                <input type="text" id="regCode" placeholder="pvz. REG-8F32A9" required class="text-uppercase">
+                <input type="text" id="regCode"
+                       placeholder="pvz. REG-8F32A9"
+                       maxlength="20" autocomplete="off"
+                       class="text-uppercase" required>
             </div>
-            <button type="submit" class="btn btn-primary w-100 mt-8">Tikrinti kodą</button>
+            <button type="submit" class="btn btn-primary w-100 mt-8" id="verifyBtn">Tikrinti kodą</button>
             <a href="/" class="btn-back d-block text-center mt-10">Atgal į prisijungimą</a>
         </form>
 
-        <form id="registerForm" class="step-2" onsubmit="handleCompleteRegistration(event)">
+        <!-- 2 žingsnis: likę duomenys -->
+        <form id="registerForm" class="step-2" novalidate>
             <div class="form-group">
                 <label>Vardas Pavardė</label>
                 <input type="text" id="dispFullName" class="readonly-input" readonly>
             </div>
-            <div class="form-group" id="classGroupWrapper">
+            <div class="form-group" id="classGroupWrapper" style="display:none;">
                 <label>Klasė</label>
                 <input type="text" id="dispClass" class="readonly-input" readonly>
             </div>
             <div class="form-group">
                 <label for="regEmail">El. paštas</label>
-                <input type="text" id="regEmail" placeholder="vardas@pavyzdys.lt" required>
+                <input type="email" id="regEmail"
+                       placeholder="vardas@pavyzdys.lt"
+                       maxlength="120" autocomplete="email" required>
             </div>
             <div class="form-group">
                 <label for="regUsername">Prisijungimo vardas</label>
-                <input type="text" id="regUsername" placeholder="pvz. jonas123" required>
+                <input type="text" id="regUsername"
+                       placeholder="pvz. jonas123"
+                       maxlength="30" minlength="3"
+                       autocomplete="username" required>
+                <div class="hint-text">3–30 lotyniškos raidės ir skaičiai.</div>
             </div>
             <div class="form-group">
                 <label for="regPassword">Slaptažodis</label>
-                <input type="password" id="regPassword" required>
+                <input type="password" id="regPassword"
+                       maxlength="128" minlength="8"
+                       autocomplete="new-password" required>
+                <div class="hint-text">Bent 8 simboliai.</div>
             </div>
-            <button type="submit" class="btn btn-primary w-100 mt-8">Užbaigti registraciją</button>
+            <div class="form-group">
+                <label for="regPassword2">Pakartokite slaptažodį</label>
+                <input type="password" id="regPassword2"
+                       maxlength="128" minlength="8"
+                       autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mt-8" id="completeBtn">Užbaigti registraciją</button>
         </form>
     </div>
 
     <script>
         let currentRegCode = '';
+        let verifying = false;
+        let submitting = false;
 
-        async function handleVerifyCode(e) {
+        document.getElementById('codeForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (verifying) return;
+
             const code = document.getElementById('regCode').value.trim().toUpperCase();
+            if (!code) {
+                showToast('Įveskite registracijos kodą.', 'error');
+                return;
+            }
+
+            verifying = true;
+            const btn = document.getElementById('verifyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Tikrinama...';
 
             try {
                 const res = await fetch(`${API_URL}/api/register/verify-code`, {
@@ -64,13 +98,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reg_code: code })
                 });
+                const data = await res.json().catch(() => ({}));
 
-                const data = await res.json();
                 if (res.ok) {
                     currentRegCode = code;
                     document.getElementById('codeForm').style.display = 'none';
-                    document.getElementById('dispFullName').value = `${data.user.name} ${data.user.surname}`;
-                    
+                    document.getElementById('dispFullName').value =
+                        `${data.user.name || ''} ${data.user.surname || ''}`.trim();
+
                     const classWrapper = document.getElementById('classGroupWrapper');
                     if (data.user.class) {
                         document.getElementById('dispClass').value = data.user.class;
@@ -85,14 +120,35 @@
                 }
             } catch (err) {
                 showToast('Tinklo klaida. Bandykite vėliau.', 'error');
+            } finally {
+                verifying = false;
+                btn.disabled = false;
+                btn.textContent = 'Tikrinti kodą';
             }
-        }
+        });
 
-        async function handleCompleteRegistration(e) {
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (submitting) return;
+
             const email = document.getElementById('regEmail').value.trim();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
+            const password2 = document.getElementById('regPassword2').value;
+
+            if (!email || !username || !password) {
+                showToast('Užpildykite visus laukus.', 'error');
+                return;
+            }
+            if (password !== password2) {
+                showToast('Slaptažodžiai nesutampa.', 'error');
+                return;
+            }
+
+            submitting = true;
+            const btn = document.getElementById('completeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Registruojama...';
 
             try {
                 const res = await fetch(`${API_URL}/api/register/complete`, {
@@ -100,23 +156,27 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         reg_code: currentRegCode,
-                        email: email,
-                        username: username,
-                        password: password
+                        email,
+                        username,
+                        password
                     })
                 });
+                const data = await res.json().catch(() => ({}));
 
-                const data = await res.json();
                 if (res.ok) {
                     showToast('Registracija sėkminga! Peradresuojama...', 'success');
-                    setTimeout(() => { window.location.href = '/'; }, 500);
+                    setTimeout(() => { window.location.href = '/'; }, 800);
                 } else {
                     showToast(data.message || 'Klaida registruojantis.', 'error');
                 }
             } catch (err) {
                 showToast('Tinklo klaida. Bandykite vėliau.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Užbaigti registraciją';
             }
-        }
+        });
     </script>
 </body>
 </html>

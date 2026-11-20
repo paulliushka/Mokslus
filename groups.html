@@ -12,6 +12,40 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- groups.html lokalūs stiliai --- */
+        .groups-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 640px) {
+            .groups-toolbar { grid-template-columns: 1fr; }
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .group-actions a,
+        .group-actions button {
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            transition: background 0.12s;
+        }
+        .group-actions a { color: var(--accent-blue); }
+        .group-actions button.delete { color: var(--danger-text); }
+        .group-actions a:hover { background: rgba(74, 144, 226, 0.1); }
+        .group-actions button.delete:hover { background: rgba(248, 113, 113, 0.1); }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -24,16 +58,18 @@
                 <a href="creating/create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
             </div>
 
-            <div class="grid-2-cols" style="margin-bottom: 12px;">
-                <div>
-                    <label style="margin-top:0;">Filtruoti pagal klasę:</label>
+            <div class="groups-toolbar">
+                <div class="form-group">
+                    <label for="filter_class" style="margin-top:0;">Filtruoti pagal klasę</label>
                     <select id="filter_class">
                         <option value="">-- Visos klasės --</option>
                     </select>
                 </div>
-                <div>
-                    <label style="margin-top:0;">Paieška (grupė / mokinys):</label>
-                    <input type="text" id="filter_search" placeholder="Įveskite paieškos žodį..." maxlength="100" autocomplete="off">
+                <div class="form-group">
+                    <label for="filter_search" style="margin-top:0;">Paieška</label>
+                    <input type="text" id="filter_search"
+                           placeholder="Grupė / mokinys..."
+                           maxlength="100" autocomplete="off">
                 </div>
             </div>
 
@@ -60,7 +96,9 @@
         let allGroups = [];
         let deleting = false;
 
-        // ---------- Prieiga: puslapis tik mokytojams ----------
+        // ------------------------------------------------------------------
+        // Prieiga
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
@@ -94,8 +132,9 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ---------- Duomenys ----------
-        // Serveris mokytojui grąžina TIK jo paties grupes, todėl čia papildomai nieko filtruoti nereikia.
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadGroups() {
             try {
                 const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
@@ -105,12 +144,21 @@
                 allGroups = Array.isArray(data) ? data : [];
                 filterGroups();
             } catch (error) {
-                showToast("Nepavyko užkrauti grupių.", "error");
+                showToast('Nepavyko užkrauti grupių.', 'error');
             }
         }
 
         function populateClassFilter() {
             const select = document.getElementById('filter_class');
+
+            // Išsaugome dabartinę reikšmę
+            const currentValue = select.value;
+
+            // Išvalome, bet paliekame pirmą "-- Visos klasės --"
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
             const classes = [...new Set(allGroups.map(g => g.class).filter(Boolean))]
                 .sort((a, b) => String(a).localeCompare(String(b), 'lt', { numeric: true }));
 
@@ -120,9 +168,16 @@
                 opt.textContent = `${c} klasė`;
                 select.appendChild(opt);
             });
+
+            // Grąžiname pasirinkimą, jei dar yra
+            if (currentValue && classes.includes(currentValue)) {
+                select.value = currentValue;
+            }
         }
 
-        // ---------- Atvaizdavimas (be innerHTML su serverio duomenimis - apsauga nuo XSS) ----------
+        // ------------------------------------------------------------------
+        // Atvaizdavimas (XSS saugus)
+        // ------------------------------------------------------------------
         function makeCell(label, child) {
             const td = document.createElement('td');
             td.setAttribute('data-label', label);
@@ -155,33 +210,41 @@
             groups.forEach(g => {
                 const tr = document.createElement('tr');
 
+                // Grupė
                 const name = document.createElement('strong');
-                name.textContent = g.group_name;
+                name.textContent = g.group_name || '-';
                 tr.appendChild(makeCell('Grupė', name));
 
-                tr.appendChild(makeCell('Klasė', document.createTextNode(g.class ? `${g.class} klasė` : '-')));
+                // Klasė
+                tr.appendChild(makeCell('Klasė',
+                    document.createTextNode(g.class ? `${g.class} klasė` : '-')));
 
+                // Mokiniai
                 const names = Array.isArray(g.student_names) ? g.student_names : [];
-                tr.appendChild(makeCell('Mokiniai', names.length > 0
-                    ? document.createTextNode(names.join(', '))
-                    : mutedText('Grupėje mokinių nėra.')));
+                tr.appendChild(makeCell('Mokiniai',
+                    names.length > 0
+                        ? document.createTextNode(names.join(', '))
+                        : mutedText('Grupėje mokinių nėra.')));
 
-                const actions = document.createDocumentFragment();
+                // Veiksmai
+                const actions = document.createElement('div');
+                actions.className = 'group-actions';
+
                 const editLink = document.createElement('a');
                 editLink.href = `editing/edit_group?id=${encodeURIComponent(g.group_id)}`;
                 editLink.textContent = 'Redaguoti';
+                editLink.setAttribute('aria-label', `Redaguoti grupę ${g.group_name}`);
                 actions.appendChild(editLink);
-                actions.appendChild(document.createTextNode(' | '));
-                const deleteLink = document.createElement('a');
-                deleteLink.href = '#';
-                deleteLink.textContent = 'Ištrinti';
-                deleteLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    deleteGroup(g);
-                });
-                actions.appendChild(deleteLink);
-                tr.appendChild(makeCell('Veiksmai', actions));
 
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'delete';
+                deleteBtn.textContent = 'Ištrinti';
+                deleteBtn.setAttribute('aria-label', `Ištrinti grupę ${g.group_name}`);
+                deleteBtn.addEventListener('click', () => deleteGroup(g));
+                actions.appendChild(deleteBtn);
+
+                tr.appendChild(makeCell('Veiksmai', actions));
                 tbody.appendChild(tr);
             });
         }
@@ -194,7 +257,7 @@
                 if (filterClass && String(g.class) !== String(filterClass)) return false;
                 if (searchText) {
                     const studentsStr = (g.student_names || []).join(' ');
-                    const combined = `${g.group_name} ${g.class} ${studentsStr}`.toLowerCase();
+                    const combined = `${g.group_name || ''} ${g.class || ''} ${studentsStr}`.toLowerCase();
                     if (!combined.includes(searchText)) return false;
                 }
                 return true;
@@ -206,7 +269,9 @@
                 : 'Pagal pasirinktus filtrus grupių nerasta.');
         }
 
-        // ---------- Veiksmai ----------
+        // ------------------------------------------------------------------
+        // Trynimas
+        // ------------------------------------------------------------------
         async function deleteGroup(group) {
             if (deleting) return;
             const question = `Ar tikrai norite ištrinti grupę „${group.group_name}“?\n\n` +
@@ -215,20 +280,21 @@
 
             deleting = true;
             try {
-                const response = await fetch(`${API_URL}/api/groups/delete/${encodeURIComponent(group.group_id)}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
+                const response = await fetch(
+                    `${API_URL}/api/groups/delete/${encodeURIComponent(group.group_id)}`,
+                    { method: 'DELETE', credentials: 'include' }
+                );
                 const result = await response.json().catch(() => ({}));
 
                 if (response.ok) {
-                    showToast("Grupė ištrinta.", "success");
+                    showToast('Grupė ištrinta.', 'success');
                     await loadGroups();
+                    populateClassFilter();
                 } else {
-                    showToast(result.message || "Nepavyko ištrinti grupės.", "error");
+                    showToast(result.message || 'Nepavyko ištrinti grupės.', 'error');
                 }
             } catch (error) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
             } finally {
                 deleting = false;
             }

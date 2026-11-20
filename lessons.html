@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Pamokų žurnalas</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -11,16 +12,47 @@
     <script src="static/js/config.js" defer></script>
     <script src="static/js/select.js" defer></script>
     <script src="static/js/toast.js" defer></script>
+    <style>
+        /* --- lessons.html lokalūs stiliai --- */
+        .week-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .week-nav h2 {
+            flex: 1;
+            text-align: center;
+            margin: 0;
+        }
+        @media (max-width: 640px) {
+            .week-nav h2 {
+                order: -1;
+                flex-basis: 100%;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Pamokų žurnalas (pasirinkimas)</h1>
 
-        <div class="card" id="scheduleViewCard">
-            <div class="flex-between-center mb-12">
-                <button type="button" class="btn btn-secondary" onclick="changeWeek(-1)">← Praeita savaitė</button>
+        <div class="card">
+            <div class="week-nav">
+                <button type="button" class="btn btn-secondary" id="prevWeekBtn"
+                        aria-label="Ankstesnė savaitė">← Praeita savaitė</button>
                 <h2 id="currentWeekRangeLabel" class="title-clean">Savaitė</h2>
-                <button type="button" class="btn btn-secondary" onclick="changeWeek(1)">Kita savaitė →</button>
+                <button type="button" class="btn btn-secondary" id="nextWeekBtn"
+                        aria-label="Kita savaitė">Kita savaitė →</button>
             </div>
 
             <div id="daysScheduleContainer"></div>
@@ -34,60 +66,85 @@
         let allTimetables = [];
         let weekOffset = 0;
 
+        const MAX_WEEK_OFFSET = 52;
+
+        const DAYS_CONFIG = [
+            { name: 'Pirmadienis', offset: 0 },
+            { name: 'Antradienis', offset: 1 },
+            { name: 'Trečiadienis', offset: 2 },
+            { name: 'Ketvirtadienis', offset: 3 },
+            { name: 'Penktadienis', offset: 4 }
+        ];
+
+        // ------------------------------------------------------------------
+        // Prieiga
+        // ------------------------------------------------------------------
         async function checkAuthAndInit() {
             try {
                 const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
-                if (currentUser.role !== 'teacher' && currentUser.role !== 'administrator') {
+                if (currentUser.role !== 'teacher') {
                     showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
                     window.location.href = 'dashboard';
                     return;
                 }
 
                 await loadTimetablesData();
+                bindEvents();
             } catch (err) {
                 window.location.href = '/';
             }
         }
 
+        function bindEvents() {
+            document.getElementById('prevWeekBtn').addEventListener('click', () => changeWeek(-1));
+            document.getElementById('nextWeekBtn').addEventListener('click', () => changeWeek(1));
+        }
+
+        // ------------------------------------------------------------------
+        // Duomenų krovimas
+        // ------------------------------------------------------------------
         async function loadTimetablesData() {
             try {
                 const res = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
-                allTimetables = await res.json();
+                if (res.status === 401) { window.location.href = '/'; return; }
+                if (!res.ok) throw new Error('bad status');
+                const data = await res.json();
+                allTimetables = Array.isArray(data) ? data : [];
                 renderWeekDaysSchedule();
             } catch (err) {
                 showToast('Nepavyko užkrauti tvarkaraščio.', 'error');
             }
         }
 
+        // ------------------------------------------------------------------
+        // Savaitės navigacija
+        // ------------------------------------------------------------------
         function changeWeek(direction) {
-            weekOffset += direction;
+            const newOffset = weekOffset + direction;
+            if (newOffset < -MAX_WEEK_OFFSET || newOffset > MAX_WEEK_OFFSET) return;
+            weekOffset = newOffset;
             renderWeekDaysSchedule();
         }
 
         function getDaysOfCurrentWeek() {
             const curr = new Date();
-            const firstDayOfWeek = curr.getDate() - curr.getDay() + 1 + (curr.getDay() === 0 ? -6 : 0) + (weekOffset * 7);
-            const monday = new Date(curr.setDate(firstDayOfWeek));
+            const dayOfWeek = curr.getDay(); // 0=sekmadienis, 1=pirmadienis, ...
+            const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const monday = new Date(curr);
+            monday.setDate(curr.getDate() + diffToMonday + (weekOffset * 7));
+            monday.setHours(0, 0, 0, 0);
 
-            const daysConfig = [
-                { name: 'Pirmadienis', offset: 0 },
-                { name: 'Antradienis', offset: 1 },
-                { name: 'Trečiadienis', offset: 2 },
-                { name: 'Ketvirtadienis', offset: 3 },
-                { name: 'Penktadienis', offset: 4 }
-            ];
-
-            return daysConfig.map(d => {
+            return DAYS_CONFIG.map(d => {
                 const targetDate = new Date(monday);
                 targetDate.setDate(monday.getDate() + d.offset);
                 const year = targetDate.getFullYear();
                 const month = String(targetDate.getMonth() + 1).padStart(2, '0');
                 const day = String(targetDate.getDate()).padStart(2, '0');
                 const dateStr = `${year}-${month}-${day}`;
-                
+
                 return {
                     day_of_week: d.name,
                     date: dateStr,
@@ -96,46 +153,86 @@
             });
         }
 
+        // ------------------------------------------------------------------
+        // Atvaizdavimas
+        // ------------------------------------------------------------------
+        function makeElement(tag, className, text) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (text != null) el.textContent = text;
+            return el;
+        }
+
         function renderWeekDaysSchedule() {
             const container = document.getElementById('daysScheduleContainer');
-            container.innerHTML = '';
+            container.replaceChildren();
+
             const weekDays = getDaysOfCurrentWeek();
-            
-            document.getElementById('currentWeekRangeLabel').textContent = `Savaitė: ${weekDays[0].date} iki ${weekDays[4].date}`;
+            document.getElementById('currentWeekRangeLabel').textContent =
+                `Savaitė: ${weekDays[0].date} iki ${weekDays[4].date}`;
 
             weekDays.forEach(dayObj => {
-                const dayTimetables = allTimetables.filter(t => t.day_of_week === dayObj.day_of_week);
+                const dayTimetables = allTimetables
+                    .filter(t => t.day_of_week === dayObj.day_of_week)
+                    .sort((a, b) => (a.lesson_order || '').localeCompare(b.lesson_order || ''));
+
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'day-section';
-                dayDiv.innerHTML = `<div class="day-title">${dayObj.displayDate}</div>`;
+
+                const title = makeElement('div', 'day-title', dayObj.displayDate);
+                const count = makeElement('span', 'day-count',
+                    dayTimetables.length === 0 ? '(nėra pamokų)' : `(${dayTimetables.length})`);
+                title.appendChild(count);
+                dayDiv.appendChild(title);
 
                 if (dayTimetables.length === 0) {
-                    dayDiv.innerHTML += `<div style="color: var(--text-muted); font-style: italic; padding: 6px 0;">Šią dieną pamokų nėra.</div>`;
+                    const empty = makeElement('div', 'empty-state', 'Šią dieną pamokų nėra.');
+                    dayDiv.appendChild(empty);
                 } else {
                     const listDiv = document.createElement('div');
                     listDiv.className = 'lesson-grid-list';
 
                     dayTimetables.forEach(t => {
-                        const card = document.createElement('div');
-                        card.className = 'lesson-item-card';
-                        card.innerHTML = `
-                            <strong>${t.group_display}</strong><br>
-                            <span style="color: var(--accent-blue);">${t.lesson_order}</span><br>
-                            <span style="color: var(--text-secondary);">Kabinetas: ${t.classroom || '-'}</span><br>
-                            <span style="color: var(--text-muted);">Mokytojas: ${t.teacher}</span>
-                        `;
-                        card.onclick = () => {
-                            window.location.href = `editing/edit_lesson?group_id=${t.group_id}&date=${dayObj.date}`;
-                        };
-                        listDiv.appendChild(card);
+                        listDiv.appendChild(renderLessonCard(t, dayObj.date));
                     });
                     dayDiv.appendChild(listDiv);
                 }
+
                 container.appendChild(dayDiv);
             });
         }
 
-        window.onload = checkAuthAndInit;
+        function renderLessonCard(t, dateStr) {
+            const card = document.createElement('div');
+            card.className = 'lesson-item-card clickable';
+            card.title = 'Spauskite norėdami atidaryti pamokos žurnalą';
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+
+            const groupLine = makeElement('div', 'lesson-group', t.group_display || '-');
+            card.appendChild(groupLine);
+
+            card.appendChild(makeElement('div', 'lesson-order', `Pamoka: ${t.lesson_order || '-'}`));
+            card.appendChild(makeElement('div', 'lesson-meta', `Kabinetas: ${t.classroom || '-'}`));
+            card.appendChild(makeElement('div', 'lesson-meta', `Mokytojas: ${t.teacher || '-'}`));
+
+            const openLesson = () => {
+                window.location.href =
+                    `editing/edit_lesson?group_id=${encodeURIComponent(t.group_id)}&date=${encodeURIComponent(dateStr)}`;
+            };
+
+            card.addEventListener('click', openLesson);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openLesson();
+                }
+            });
+
+            return card;
+        }
+
+        window.addEventListener('load', checkAuthAndInit);
     </script>
 </body>
 </html>

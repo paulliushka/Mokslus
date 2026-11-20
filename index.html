@@ -2,6 +2,7 @@
 <html lang="lt">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mokslus - Prisijungimas</title>
     <link rel="icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png">
@@ -17,18 +18,24 @@
         <h1>Prisijungti</h1>
         <p class="mb-16">Prisijunkite prie Mokslus sistemos.</p>
 
-        <form id="loginForm">
+        <form id="loginForm" novalidate>
             <div class="form-group">
                 <label for="username">Vartotojo vardas</label>
-                <input type="text" id="username" name="username" placeholder="Įveskite vartotojo vardą" required>
+                <input type="text" id="username" name="username"
+                       placeholder="Įveskite vartotojo vardą"
+                       maxlength="64" autocomplete="username"
+                       autofocus required>
             </div>
-            
+
             <div class="form-group">
                 <label for="password">Slaptažodis</label>
-                <input type="password" id="password" name="password" placeholder="Įveskite slaptažodį" required>
+                <input type="password" id="password" name="password"
+                       placeholder="Įveskite slaptažodį"
+                       maxlength="128" autocomplete="current-password"
+                       required>
             </div>
-            
-            <button type="submit" class="btn btn-primary w-100 mt-8">Prisijungti</button>
+
+            <button type="submit" class="btn btn-primary w-100 mt-8" id="loginBtn">Prisijungti</button>
         </form>
 
         <div class="text-center mt-10">
@@ -37,26 +44,45 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        let submitting = false;
+
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
+            if (submitting) return;
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showToast('Įveskite vartotojo vardą ir slaptažodį.', 'error');
+                return;
+            }
+
+            submitting = true;
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Jungiamasi...';
 
             try {
                 const response = await fetch(`${API_URL}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({ username, password })
                 });
-                const result = await response.json();
+                const result = await response.json().catch(() => ({}));
+
                 if (response.ok) {
                     window.location.href = 'dashboard';
                 } else {
-                    showToast(result.message || "Neteisingas vartotojo vardas arba slaptažodis.", "error");
+                    showToast(result.message || 'Neteisingas vartotojo vardas arba slaptažodis.', 'error');
                 }
             } catch (error) {
-                showToast("Nepavyko prisijungti prie serverio.", "error");
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Prisijungti';
             }
         });
     </script>
