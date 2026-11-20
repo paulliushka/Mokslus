@@ -2,7 +2,6 @@
    KONFIGŪRACIJA IR GLOBALUS FETCH WRAPPER
    - Automatinis API_URL pagal aplinką (localhost vs production)
    - Automatinis credentials: 'include' (jei nenurodyta kitaip)
-   - ngrok-skip-browser-warning tik ngrok domenui
    - Saugus headers normalizavimas (Headers, array, plain object)
    - Apsauga nuo dvigubo wrap'inimo
    ========================================================================== */
@@ -13,7 +12,7 @@
     // ----------------------------------------------------------------------
     // 1. API_URL nustatymas pagal aplinką
     // ----------------------------------------------------------------------
-    const PRODUCTION_API = 'https://gooey-finer-retaining.ngrok-free.dev';
+    const PRODUCTION_API = 'https://api.pranskaitis.lt';
     const LOCAL_API = 'http://localhost:5000';
 
     const isLocalhost = (
@@ -32,11 +31,6 @@
     // ----------------------------------------------------------------------
     // 2. Pagalbinės funkcijos
     // ----------------------------------------------------------------------
-    function isNgrokUrl(url) {
-        if (typeof url !== 'string') return false;
-        return url.includes('ngrok-free.dev') || url.includes('ngrok.io') || url.includes('ngrok.app');
-    }
-
     /**
      * Normalizuoja headers į Headers objektą.
      * Priima: Headers, Array, plain Object, undefined.
@@ -66,18 +60,8 @@
     const originalFetch = window.fetch.bind(window);
 
     window.fetch = async function (resource, options = {}) {
-        // Jei resource yra Request objektas, ištraukiame URL
-        let url;
-        if (resource instanceof Request) {
-            url = resource.url;
-        } else {
-            url = String(resource);
-        }
-
-        // Normalizuojame options
         let opts = options || {};
         if (opts instanceof Request) {
-            // Jei perduotas Request, konvertuojame į plain object
             opts = {
                 method: opts.method,
                 headers: opts.headers,
@@ -94,18 +78,13 @@
             };
         }
 
-        // 3a. Credentials pagal nutylėjimą - 'include' (kad slapukai veiktų cross-origin)
+        // Credentials pagal nutylėjimą - 'include' (kad slapukai veiktų tarp domenų)
         if (opts.credentials === undefined) {
             opts.credentials = 'include';
         }
 
-        // 3b. ngrok-skip-browser-warning header'is
-        if (isNgrokUrl(url)) {
-            const headers = normalizeHeaders(opts.headers);
-            if (!headers.has('ngrok-skip-browser-warning')) {
-                headers.set('ngrok-skip-browser-warning', 'true');
-            }
-            opts.headers = headers;
+        if (opts.headers !== undefined) {
+            opts.headers = normalizeHeaders(opts.headers);
         }
 
         return originalFetch(resource, opts);
@@ -119,7 +98,6 @@
      * Grąžina { ok, status, data } - niekada nemeta klaidos.
      */
     window.apiFetch = async function (path, options = {}) {
-        // Jei path yra pilnas URL (prasideda http), naudojame jį
         const url = /^https?:\/\//i.test(path) ? path : `${API_URL}${path}`;
 
         try {
