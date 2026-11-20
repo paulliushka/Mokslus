@@ -1,4 +1,6 @@
-const VAPID_PUBLIC_KEY = 'BEsxN0YzeZrNBUefo8nbsOXfhg5QuEncLiNkiXDVu1lf-3wq-83ba0Xf-ze2iQ5yHXN365Yo8K5lnpxiAWl-J_8';
+// ===== VAPID VIEŠASIS RAKTAS =====
+// SVARBU: turi atitikti VAPID_PUBLIC_KEY app.py faile!
+const VAPID_PUBLIC_KEY = 'BIzX1Z7pL4sN6wX1yZ3aB5cD7eF9gH1jK3mN5pQ7rS9tU2vW4xY6zA8bC0dE2fG4hI6jK8lM0nO2pQ4rS6tU8vW0xY2zA4bC6dE8fG0hI2jK4lM6nO8pQ0rS2tU4vW6xY8zA0bC2dE4fG6hI8jK0lM2nO4pQ6rS8tU0vW2xY4zA6bC8dE0fG2hI4jK6lM8nO0pQ2rS4tU6vW8xY0zA2bC4d';
 
 function urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -9,20 +11,46 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
+// Palygina, ar esama prenumerata naudoja tą patį VAPID raktą
+function subscriptionUsesSameKey(sub, expectedKey) {
+    if (!sub || !sub.options || !sub.options.applicationServerKey) return false;
+    const current = new Uint8Array(sub.options.applicationServerKey);
+    const expected = urlBase64ToUint8Array(expectedKey);
+    if (current.length !== expected.length) return false;
+    for (let i = 0; i < current.length; i++) {
+        if (current[i] !== expected[i]) return false;
+    }
+    return true;
+}
+
 async function isPushSupported() {
     return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
 }
 
 async function getRegistration() {
-    return await navigator.serviceWorker.register('/static/js/sw.js');
+    // SW registruojamas iš šaknies (/sw.js), kad scope apimtų visą svetainę
+    const existing = await navigator.serviceWorker.getRegistration('/');
+    if (existing) return existing;
+    return await navigator.serviceWorker.register('/sw.js', { scope: '/' });
 }
 
 async function getExistingSubscription() {
     try {
-        const reg = await navigator.serviceWorker.getRegistration('/static/js/sw.js');
+        const reg = await navigator.serviceWorker.getRegistration('/');
         if (!reg) return null;
         return await reg.pushManager.getSubscription();
     } catch (e) { return null; }
+}
+
+// Jei senoji prenumerata naudoja kitą VAPID raktą – ją atšaukiame
+async function ensureFreshSubscription(reg) {
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && !subscriptionUsesSameKey(sub, VAPID_PUBLIC_KEY)) {
+        console.warn('[Push] Senoji prenumerata naudoja kitą VAPID raktą – atšaukiu.');
+        await sub.unsubscribe();
+        sub = null;
+    }
+    return sub;
 }
 
 async function enablePush() {
@@ -37,7 +65,7 @@ async function enablePush() {
             showToast('Nepavyko gauti leidimo pranešimams.', 'error');
             return false;
         }
-        let sub = await reg.pushManager.getSubscription();
+        let sub = await ensureFreshSubscription(reg);
         if (!sub) {
             sub = await reg.pushManager.subscribe({
                 userVisibleOnly: true,
@@ -94,7 +122,12 @@ async function sendTestPush() {
         });
         const r = await res.json().catch(() => ({}));
         if (res.ok) {
-            showToast(`Testinis pranešimas išsiųstas (${r.sent_to} įrenginiams)`, 'success');
+            if (r.errors && r.errors.length > 0) {
+                showToast(`Išsiųsta: ${r.sent_to}, klaidų: ${r.errors.length}. Žiūrėk konsolę.`, 'error');
+                console.error('[Push] Serverio klaidos:', r.errors);
+            } else {
+                showToast(`Testinis pranešimas išsiųstas (${r.sent_to} įrenginiams)`, 'success');
+            }
         } else {
             showToast(r.message || 'Nepavyko išsiųsti.', 'error');
         }
