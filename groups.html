@@ -18,11 +18,45 @@
         <h1>Grupės</h1>
 
         <div class="card">
-            <h2>Mano grupės</h2>
+            <h2>Sukurti naują grupę</h2>
 
-            <div class="mb-20">
-                <a href="create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
+            <div class="info-panel">
+                ℹ️ Grupė bus priskirta jums. Pasirinkite klasę, tada galėsite pažymėti mokinius, kurie mokysis šioje grupėje.
             </div>
+
+            <form id="createGroupForm" novalidate>
+                <div class="form-group">
+                    <label for="group_name">Pavadinimas</label>
+                    <input type="text" id="group_name" name="group_name"
+                           placeholder="Pavadinimas..." maxlength="100" autocomplete="off" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="class_select">Klasė</label>
+                    <select name="class" id="class_select" required>
+                        <option value="">-- Pasirinkite klasę --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mokiniai</label>
+                    <div class="btn-row">
+                        <button type="button" class="btn btn-secondary" id="toggleAllBtn">Pasirinkti visus</button>
+                    </div>
+                    <div id="students_container" class="scroll-box">
+                        <p class="empty-msg">Pirmiausia pasirinkite klasę...</p>
+                    </div>
+                    <div class="selection-info" id="selectionInfo"></div>
+                </div>
+
+                <div class="mt-15">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Sukurti grupę</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Mano grupės</h2>
 
             <div class="groups-toolbar">
                 <div class="form-group">
@@ -61,6 +95,8 @@
         let currentUser = {};
         let allGroups = [];
         let deleting = false;
+        let submitting = false;
+        let studentsRequestId = 0;
 
         async function checkAuthAndInit() {
             try {
@@ -86,15 +122,231 @@
         }
 
         async function initPage() {
+            // Formos dalis
+            await loadClasses();
+            document.getElementById('class_select').addEventListener('change', fetchStudentsByClass);
+            document.getElementById('toggleAllBtn').addEventListener('click', toggleAllStudents);
+            document.getElementById('students_container').addEventListener('change', updateSelectionInfo);
+            document.getElementById('createGroupForm').addEventListener('submit', handleSubmit);
+
+            // Sąrašo dalis
             await loadGroups();
             populateClassFilter();
-
             document.getElementById('filter_class').addEventListener('change', filterGroups);
             document.getElementById('filter_search').addEventListener('input', filterGroups);
 
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
+        // ------------------------------------------------------------------
+        // FORMA
+        // ------------------------------------------------------------------
+        async function loadClasses() {
+            try {
+                const response = await fetch(`${API_URL}/api/classes`, { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (!response.ok) throw new Error('bad status');
+                const classes = await response.json();
+
+                const select = document.getElementById('class_select');
+                select.replaceChildren();
+
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pasirinkite klasę --';
+                select.appendChild(placeholder);
+
+                (classes || []).forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c;
+                    opt.textContent = `${c} klasė`;
+                    select.appendChild(opt);
+                });
+
+                if (!Array.isArray(classes) || classes.length === 0) {
+                    showToast('Sistemoje nėra klasių su mokiniais.', 'info');
+                }
+            } catch (error) {
+                showToast('Nepavyko užkrauti klasių.', 'error');
+            }
+        }
+
+        async function fetchStudentsByClass() {
+            const className = document.getElementById('class_select').value;
+            const container = document.getElementById('students_container');
+            const requestId = ++studentsRequestId;
+
+            container.replaceChildren();
+            updateSelectionInfo();
+
+            if (!className) {
+                const msg = document.createElement('p');
+                msg.className = 'empty-msg';
+                msg.textContent = 'Pirmiausia pasirinkite klasę...';
+                container.appendChild(msg);
+                return;
+            }
+
+            const loading = document.createElement('p');
+            loading.className = 'empty-msg';
+            loading.textContent = 'Kraunami mokiniai...';
+            container.appendChild(loading);
+
+            try {
+                const response = await fetch(`${API_URL}/get_students/${encodeURIComponent(className)}`,
+                    { credentials: 'include' });
+                if (response.status === 401) { window.location.href = '/'; return; }
+                if (!response.ok) throw new Error('bad status');
+                const data = await response.json();
+
+                if (requestId !== studentsRequestId) return;
+
+                container.replaceChildren();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    const msg = document.createElement('p');
+                    msg.className = 'empty-msg';
+                    msg.textContent = 'Šioje klasėje mokinių nėra.';
+                    container.appendChild(msg);
+                    return;
+                }
+
+                const sorted = [...data].sort((a, b) =>
+                    String(a.surname || '').localeCompare(String(b.surname || ''), 'lt'));
+
+                sorted.forEach(student => {
+                    const label = document.createElement('label');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'students';
+                    checkbox.className = 'student-checkbox';
+                    checkbox.value = student.user_id;
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = `${student.name || ''} ${student.surname || ''}`.trim();
+
+                    label.appendChild(checkbox);
+                    label.appendChild(nameSpan);
+                    container.appendChild(label);
+                });
+
+                updateSelectionInfo();
+            } catch (error) {
+                if (requestId !== studentsRequestId) return;
+                container.replaceChildren();
+                const msg = document.createElement('p');
+                msg.className = 'empty-msg';
+                msg.textContent = 'Nepavyko užkrauti mokinių.';
+                container.appendChild(msg);
+                showToast('Nepavyko užkrauti mokinių.', 'error');
+            }
+        }
+
+        function studentCheckboxes() {
+            return Array.from(document.querySelectorAll('.student-checkbox'));
+        }
+
+        function toggleAllStudents() {
+            const boxes = studentCheckboxes();
+            if (boxes.length === 0) return;
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => { cb.checked = !allChecked; });
+            updateSelectionInfo();
+        }
+
+        function updateSelectionInfo() {
+            const boxes = studentCheckboxes();
+            const checked = boxes.filter(cb => cb.checked).length;
+            const total = boxes.length;
+
+            const info = document.getElementById('selectionInfo');
+            info.textContent = total === 0
+                ? ''
+                : `Pasirinkta: ${checked} / ${total}`;
+
+            const toggleBtn = document.getElementById('toggleAllBtn');
+            if (total === 0) {
+                toggleBtn.disabled = true;
+                toggleBtn.textContent = 'Pasirinkti visus';
+            } else if (checked === total) {
+                toggleBtn.disabled = false;
+                toggleBtn.textContent = 'Nuimti visus';
+            } else {
+                toggleBtn.disabled = false;
+                toggleBtn.textContent = 'Pasirinkti visus';
+            }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            if (submitting) return;
+
+            const groupName = document.getElementById('group_name').value.trim();
+            const className = document.getElementById('class_select').value;
+            const studentIds = studentCheckboxes()
+                .filter(cb => cb.checked)
+                .map(cb => Number(cb.value));
+
+            if (!groupName) {
+                showToast('Įveskite grupės pavadinimą.', 'error');
+                return;
+            }
+            if (!className) {
+                showToast('Pasirinkite klasę.', 'error');
+                return;
+            }
+            if (studentIds.length === 0) {
+                showToast('Pasirinkite bent vieną mokinį.', 'error');
+                return;
+            }
+
+            submitting = true;
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Kuriama...';
+
+            try {
+                const res = await fetch(`${API_URL}/api/groups/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        group_name: groupName,
+                        class: className,
+                        students: studentIds
+                    })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (res.ok) {
+                    showToast('Grupė sėkmingai sukurta!', 'success');
+
+                    // Išvalome formą
+                    document.getElementById('createGroupForm').reset();
+                    document.getElementById('students_container').replaceChildren();
+                    const msg = document.createElement('p');
+                    msg.className = 'empty-msg';
+                    msg.textContent = 'Pirmiausia pasirinkite klasę...';
+                    document.getElementById('students_container').appendChild(msg);
+                    updateSelectionInfo();
+
+                    // Atnaujiname sąrašą
+                    await loadGroups();
+                    populateClassFilter();
+                } else {
+                    showToast(result.message || 'Nepavyko sukurti grupės.', 'error');
+                }
+            } catch (err) {
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+            } finally {
+                submitting = false;
+                btn.disabled = false;
+                btn.textContent = 'Sukurti grupę';
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // SĄRAŠAS
+        // ------------------------------------------------------------------
         async function loadGroups() {
             try {
                 const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
@@ -157,7 +409,7 @@
             h3.textContent = 'Grupių dar nėra';
 
             const p = document.createElement('p');
-            p.textContent = 'Paspauskite „Sukurti naują grupę“, kad sukurtumėte pirmąją grupę.';
+            p.textContent = 'Užpildykite formą aukščiau, kad sukurtumėte pirmąją grupę.';
 
             wrap.appendChild(icon);
             wrap.appendChild(h3);
@@ -240,7 +492,7 @@
 
             const noGroupsAtAll = allGroups.length === 0;
             renderGroups(filtered, noGroupsAtAll
-                ? 'Dar neturite grupių. Paspauskite „Sukurti naują grupę“.'
+                ? 'Dar neturite grupių. Užpildykite formą aukščiau.'
                 : 'Pagal pasirinktus filtrus grupių nerasta.');
         }
 
