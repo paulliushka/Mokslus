@@ -93,7 +93,7 @@
 
         async function init() {
             try {
-                const res = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const res = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!res.ok) { window.location.replace('/'); return; }
                 const user = await res.json();
 
@@ -127,7 +127,7 @@
             btn.disabled = true;
             btn.textContent = 'Atsijungiama...';
             try {
-                await fetch(`${API_URL}/api/logout`, {
+                await fetch(`${API_URL}/logout`, {
                     method: 'POST',
                     credentials: 'include'
                 });
