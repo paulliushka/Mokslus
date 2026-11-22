@@ -47,7 +47,7 @@
     };
 
     window.requireAuth = async function () {
-        const r = await window.apiFetch('/api/profile');
+        const r = await window.apiFetch('/profile');
         if (!r.ok || r.status === 401) {
             location.replace('/');
             return null;

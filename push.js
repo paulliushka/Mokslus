@@ -77,7 +77,7 @@ async function enablePush() {
             sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyArr });
         }
 
-        const res = await fetch(`${API_URL}/api/push/subscribe`, {
+        const res = await fetch(`${API_URL}/push/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(sub),
@@ -104,7 +104,7 @@ async function disablePush() {
             showToast('Pranešimai nebuvo įjungti.', 'error');
             return;
         }
-        await fetch(`${API_URL}/api/push/unsubscribe`, {
+        await fetch(`${API_URL}/push/unsubscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ endpoint: sub.endpoint }),
@@ -120,7 +120,7 @@ async function disablePush() {
 
 async function sendTestPush() {
     try {
-        const res = await fetch(`${API_URL}/api/push/test`, { method: 'POST' });
+        const res = await fetch(`${API_URL}/push/test`, { method: 'POST' });
         const r = await res.json().catch(() => ({}));
         if (!res.ok) {
             showToast(r.message || 'Nepavyko išsiųsti.', 'error');
@@ -168,7 +168,7 @@ async function updatePushUI() {
         hide(enableBtn, disableBtn, testBtn);
     } else {
         statusEl.className = 'push-status disabled';
-        statusEl.textContent = 'Pranešimai neišjungti. Įjunkite, kad gautumėte pranešimus.';
+        statusEl.textContent = 'Pranešimai neįjungti. Įjunkite, kad gautumėte pranešimus.';
         show(enableBtn);
         hide(disableBtn, testBtn);
     }
