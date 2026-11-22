@@ -35,14 +35,14 @@ async function isPushSupported() {
 }
 
 async function getRegistration() {
-    const existing = await navigator.serviceWorker.getRegistration('/static/js/sw.js');
+    const existing = await navigator.serviceWorker.getRegistration('sw.js');
     if (existing) return existing;
-    return navigator.serviceWorker.register('/static/js/sw.js');
+    return navigator.serviceWorker.register('sw.js');
 }
 
 async function getExistingSubscription() {
     try {
-        const reg = await navigator.serviceWorker.getRegistration('/static/js/sw.js');
+        const reg = await navigator.serviceWorker.getRegistration('sw.js');
         return reg ? await reg.pushManager.getSubscription() : null;
     } catch {
         return null;

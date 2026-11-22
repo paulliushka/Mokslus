@@ -15,8 +15,8 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(self.registration.showNotification(data.title || 'Mokslus', {
         body: data.body || 'Naujas pranešimas',
-        icon: '/static/images/apple-touch-icon.png',
-        badge: '/static/images/apple-touch-icon.png',
+        icon: 'apple-touch-icon.png',
+        badge: 'apple-touch-icon.png',
         data: { url: data.url || '/' },
         vibrate: [200, 100, 200],
         tag: data.tag || 'mokslus',
