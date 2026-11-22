@@ -93,7 +93,7 @@
             btn.textContent = 'Tikrinama...';
 
             try {
-                const res = await fetch(`${API_URL}/api/register/verify-code`, {
+                const res = await fetch(`${API_URL}/register/verify-code`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ reg_code: code })
@@ -151,7 +151,7 @@
             btn.textContent = 'Registruojama...';
 
             try {
-                const res = await fetch(`${API_URL}/api/register/complete`, {
+                const res = await fetch(`${API_URL}/register/complete`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

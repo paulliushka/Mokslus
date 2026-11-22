@@ -86,7 +86,7 @@
 
         async function init() {
             try {
-                const resProfile = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const resProfile = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!resProfile.ok) { window.location.href = '/'; return; }
                 const user = await resProfile.json();
                 userRole = user.role;
@@ -117,8 +117,8 @@
         async function loadFormDropdowns() {
             try {
                 const [resGroups, resTeachers] = await Promise.all([
-                    fetch(`${API_URL}/api/groups`, { credentials: 'include' }),
-                    fetch(`${API_URL}/api/teachers`, { credentials: 'include' })
+                    fetch(`${API_URL}/groups`, { credentials: 'include' }),
+                    fetch(`${API_URL}/teachers`, { credentials: 'include' })
                 ]);
                 if (!resGroups.ok || !resTeachers.ok) throw new Error('bad status');
 
@@ -157,7 +157,7 @@
 
         async function loadTimetables() {
             try {
-                const resTt = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
+                const resTt = await fetch(`${API_URL}/timetables`, { credentials: 'include' });
                 if (resTt.status === 401) { window.location.href = '/'; return; }
                 if (!resTt.ok) throw new Error('bad status');
                 const data = await resTt.json();
@@ -197,7 +197,7 @@
             btn.textContent = 'Saugoma...';
 
             try {
-                const res = await fetch(`${API_URL}/api/timetables/add`, {
+                const res = await fetch(`${API_URL}/timetables/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

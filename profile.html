@@ -99,7 +99,7 @@
 
         async function loadProfile() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
@@ -158,7 +158,7 @@
                 const payload = { username, email };
                 if (password) payload.password = password;
 
-                const res = await fetch(`${API_URL}/api/profile/update`, {
+                const res = await fetch(`${API_URL}/profile/update`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

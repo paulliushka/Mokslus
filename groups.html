@@ -100,7 +100,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
             } catch (err) {
@@ -122,14 +122,12 @@
         }
 
         async function initPage() {
-            // Formos dalis
             await loadClasses();
             document.getElementById('class_select').addEventListener('change', fetchStudentsByClass);
             document.getElementById('toggleAllBtn').addEventListener('click', toggleAllStudents);
             document.getElementById('students_container').addEventListener('change', updateSelectionInfo);
             document.getElementById('createGroupForm').addEventListener('submit', handleSubmit);
 
-            // Sąrašo dalis
             await loadGroups();
             populateClassFilter();
             document.getElementById('filter_class').addEventListener('change', filterGroups);
@@ -138,12 +136,9 @@
             if (typeof initCustomSelects === 'function') initCustomSelects();
         }
 
-        // ------------------------------------------------------------------
-        // FORMA
-        // ------------------------------------------------------------------
         async function loadClasses() {
             try {
-                const response = await fetch(`${API_URL}/api/classes`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/classes`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const classes = await response.json();
@@ -306,7 +301,7 @@
             btn.textContent = 'Kuriama...';
 
             try {
-                const res = await fetch(`${API_URL}/api/groups/add`, {
+                const res = await fetch(`${API_URL}/groups/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -320,7 +315,6 @@
                 if (res.ok) {
                     showToast('Grupė sėkmingai sukurta!', 'success');
 
-                    // Išvalome formą
                     document.getElementById('createGroupForm').reset();
                     document.getElementById('students_container').replaceChildren();
                     const msg = document.createElement('p');
@@ -329,7 +323,6 @@
                     document.getElementById('students_container').appendChild(msg);
                     updateSelectionInfo();
 
-                    // Atnaujiname sąrašą
                     await loadGroups();
                     populateClassFilter();
                 } else {
@@ -344,12 +337,9 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // SĄRAŠAS
-        // ------------------------------------------------------------------
         async function loadGroups() {
             try {
-                const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/groups`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const data = await response.json();
@@ -505,7 +495,7 @@
             deleting = true;
             try {
                 const response = await fetch(
-                    `${API_URL}/api/groups/delete/${encodeURIComponent(group.group_id)}`,
+                    `${API_URL}/groups/delete/${encodeURIComponent(group.group_id)}`,
                     { method: 'DELETE', credentials: 'include' }
                 );
                 const result = await response.json().catch(() => ({}));

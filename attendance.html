@@ -71,7 +71,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 const currentUser = await response.json();
 
@@ -96,7 +96,7 @@
 
         async function loadAttendance() {
             try {
-                const response = await fetch(`${API_URL}/api/attendance`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/attendance`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const data = await response.json();

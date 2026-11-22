@@ -49,7 +49,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
@@ -73,7 +73,7 @@
 
         async function loadTimetablesData() {
             try {
-                const res = await fetch(`${API_URL}/api/timetables`, { credentials: 'include' });
+                const res = await fetch(`${API_URL}/timetables`, { credentials: 'include' });
                 if (res.status === 401) { window.location.href = '/'; return; }
                 if (!res.ok) throw new Error('bad status');
                 const data = await res.json();

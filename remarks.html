@@ -17,7 +17,6 @@
     <div class="container">
         <h1>Pagyrimai ir pastabos</h1>
 
-        <!-- Statistikos kortelės -->
         <div class="stats-row" id="statsRow"></div>
 
         <div class="card d-none" id="addRemarkCard">
@@ -111,7 +110,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
             } catch (err) {
@@ -167,7 +166,7 @@
 
         async function loadTeacherGroups() {
             try {
-                const response = await fetch(`${API_URL}/api/groups`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/groups`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const groups = await response.json();
@@ -245,7 +244,7 @@
 
         async function loadRemarks() {
             try {
-                const response = await fetch(`${API_URL}/api/remarks`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/remarks`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const data = await response.json();
@@ -257,9 +256,6 @@
             }
         }
 
-        // ------------------------------------------------------------------
-        // Statistika
-        // ------------------------------------------------------------------
         function renderStats() {
             const container = document.getElementById('statsRow');
             container.replaceChildren();
@@ -451,7 +447,7 @@
             submitBtn.textContent = 'Saugoma...';
 
             try {
-                const response = await fetch(`${API_URL}/api/remarks/add`, {
+                const response = await fetch(`${API_URL}/remarks/add`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -487,7 +483,7 @@
         async function deleteRemark(remarkId) {
             if (!confirm('Ar tikrai norite ištrinti šį įrašą?')) return;
             try {
-                const response = await fetch(`${API_URL}/api/remarks/delete/${encodeURIComponent(remarkId)}`, {
+                const response = await fetch(`${API_URL}/remarks/delete/${encodeURIComponent(remarkId)}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });
