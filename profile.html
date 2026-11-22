@@ -90,6 +90,17 @@
             </p>
         </div>
 
+        <div class="card">
+            <h2>Aktyvūs įrenginiai</h2>
+            <p class="hint-text" style="margin-bottom:16px;">
+                Įrenginiai, kurie užsiprenumeravę šios paskyros push pranešimus. Galite pašalinti bet kurį įrenginį.
+            </p>
+
+            <div id="devicesList" class="devices-list">
+                <p class="text-muted-italic">Kraunama...</p>
+            </div>
+        </div>
+
         <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
@@ -184,7 +195,109 @@
             }
         });
 
-        window.addEventListener('load', loadProfile);
+        // ============================================================
+        // AKTYVŪS ĮRENGINIAI
+        // ============================================================
+        function formatDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return '';
+            return d.toLocaleDateString('lt-LT', {
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            });
+        }
+
+        async function loadDevices() {
+            const container = document.getElementById('devicesList');
+            try {
+                const res = await fetch(`${API_URL}/push/subscriptions`, { credentials: 'include' });
+                if (res.status === 401) { window.location.href = '/'; return; }
+                if (!res.ok) throw new Error('bad status');
+
+                const devices = await res.json();
+                container.replaceChildren();
+
+                if (!Array.isArray(devices) || devices.length === 0) {
+                    const empty = document.createElement('p');
+                    empty.className = 'text-muted-italic';
+                    empty.textContent = 'Kol kas neturite aktyvių įrenginių.';
+                    container.appendChild(empty);
+                    return;
+                }
+
+                devices.forEach(dev => {
+                    const card = document.createElement('div');
+                    card.className = 'device-card';
+
+                    const info = document.createElement('div');
+                    info.className = 'device-info';
+
+                    const name = document.createElement('div');
+                    name.className = 'device-name';
+                    name.textContent = dev.service || 'Įrenginys';
+
+                    const meta = document.createElement('div');
+                    meta.className = 'device-meta';
+                    const host = dev.host || '';
+                    const date = formatDate(dev.created_at);
+                    meta.textContent = [host, date ? `Pridėta: ${date}` : ''].filter(Boolean).join(' · ');
+
+                    info.appendChild(name);
+                    info.appendChild(meta);
+
+                    const delBtn = document.createElement('button');
+                    delBtn.type = 'button';
+                    delBtn.className = 'btn btn-secondary device-remove-btn';
+                    delBtn.textContent = 'Pašalinti';
+                    delBtn.addEventListener('click', () => removeDevice(dev.id, delBtn));
+
+                    card.appendChild(info);
+                    card.appendChild(delBtn);
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                container.replaceChildren();
+                const msg = document.createElement('p');
+                msg.className = 'text-muted-italic';
+                msg.textContent = 'Nepavyko užkrauti įrenginių.';
+                container.appendChild(msg);
+            }
+        }
+
+        async function removeDevice(id, btn) {
+            if (!confirm('Ar tikrai norite pašalinti šį įrenginį? Jis nebegaus push pranešimų.')) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Šalinama...';
+
+            try {
+                const res = await fetch(`${API_URL}/push/subscriptions/${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const result = await res.json().catch(() => ({}));
+
+                if (res.ok) {
+                    showToast('Įrenginys pašalintas.', 'success');
+                    await loadDevices();
+                } else {
+                    showToast(result.message || 'Nepavyko pašalinti įrenginio.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Pašalinti';
+                }
+            } catch (err) {
+                showToast('Nepavyko prisijungti prie serverio.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Pašalinti';
+            }
+        }
+
+        async function init() {
+            await loadProfile();
+            await loadDevices();
+        }
+
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>

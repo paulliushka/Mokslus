@@ -1347,6 +1347,68 @@ input[type="date"]::-webkit-inner-spin-button {
     border-color: var(--info-border);
 }
 
+/* ============================== DEVICES LIST ============================== */
+.devices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.device-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
+}
+
+.device-card:hover {
+    border-color: var(--border-light);
+    background: var(--bg-hover);
+}
+
+.device-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.device-name {
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--text-primary);
+    letter-spacing: -0.1px;
+}
+
+.device-meta {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    word-break: break-word;
+}
+
+.device-remove-btn {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .device-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .device-remove-btn {
+        width: 100%;
+    }
+}
+
 /* ============================== PRINT ============================== */
 @media print {
     body { background: #fff; color: #000; font-size: 11pt; }
