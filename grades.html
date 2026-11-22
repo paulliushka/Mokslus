@@ -59,7 +59,7 @@
             <div id="gradesBySubject" class="d-none"></div>
         </div>
 
-        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -73,7 +73,7 @@
 
                 if (currentUser.role !== 'student') {
                     showToast('Puslapis pasiekiamas tik mokiniams.', 'error');
-                    window.location.href = '/dashboard';
+                    window.location.href = 'dashboard';
                     return;
                 }
 

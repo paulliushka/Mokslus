@@ -177,7 +177,7 @@
 
             const openLesson = () => {
                 window.location.href =
-                    `editing/edit_lesson?group_id=${encodeURIComponent(t.group_id)}&date=${encodeURIComponent(dateStr)}`;
+                    `edit_lesson?group_id=${encodeURIComponent(t.group_id)}&date=${encodeURIComponent(dateStr)}`;
             };
 
             card.addEventListener('click', openLesson);

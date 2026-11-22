@@ -74,7 +74,7 @@
             </div>
 
             <br>
-            <a href="../remarks" class="btn-back">← Grįžti atgal</a>
+            <a href="remarks" class="btn-back">← Grįžti atgal</a>
         </div>
     </div>
 
@@ -97,12 +97,12 @@
 
                 if (currentUser.role !== 'teacher') {
                     showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
-                    window.location.href = '../dashboard';
+                    window.location.href = 'dashboard';
                     return;
                 }
 
                 if (!remarkId) {
-                    window.location.href = '../remarks';
+                    window.location.href = 'remarks';
                     return;
                 }
 
@@ -233,7 +233,7 @@
                 const result = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showToast('Įrašas atnaujintas!', 'success');
-                    setTimeout(() => { window.location.href = '../remarks'; }, 600);
+                    setTimeout(() => { window.location.href = 'remarks'; }, 600);
                 } else {
                     showToast(result.message || 'Nepavyko išsaugoti įrašo.', 'error');
                 }

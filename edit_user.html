@@ -83,7 +83,7 @@
             </div>
 
             <br>
-            <a href="../users" class="btn-back">← Grįžti atgal</a>
+            <a href="users" class="btn-back">← Grįžti atgal</a>
         </div>
     </div>
 
@@ -111,12 +111,12 @@
 
                 if (currentUser.role !== 'administrator') {
                     showToast('Puslapis pasiekiamas tik administratoriams.', 'error');
-                    window.location.href = '../dashboard';
+                    window.location.href = 'dashboard';
                     return;
                 }
 
                 if (!userId) {
-                    window.location.href = '../users';
+                    window.location.href = 'users';
                     return;
                 }
 
@@ -276,7 +276,7 @@
                 const result = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showToast('Pakeitimai išsaugoti!', 'success');
-                    setTimeout(() => { window.location.href = '../users'; }, 600);
+                    setTimeout(() => { window.location.href = 'users'; }, 600);
                 } else {
                     showToast(result.message || 'Nepavyko išsaugoti pakeitimų.', 'error');
                 }

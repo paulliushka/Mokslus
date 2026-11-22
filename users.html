@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -117,7 +117,7 @@
 
             if (currentUser.role !== 'administrator') {
                 showToast('Puslapis pasiekiamas tik administratoriams.', 'error');
-                window.location.href = '/dashboard';
+                window.location.href = 'dashboard';
                 return;
             }
 
@@ -292,7 +292,7 @@
                 actions.className = 'user-actions';
 
                 const editLink = document.createElement('a');
-                editLink.href = `/editing/edit_user?id=${encodeURIComponent(u.user_id)}`;
+                editLink.href = `edit_user?id=${encodeURIComponent(u.user_id)}`;
                 editLink.textContent = 'Redaguoti';
                 actions.appendChild(editLink);
 

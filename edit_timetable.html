@@ -105,7 +105,7 @@
             </div>
         </div>
 
-        <a href="../timetables" class="btn-back">← Atgal į tvarkaraštį</a>
+        <a href="timetables" class="btn-back">← Atgal į tvarkaraštį</a>
     </div>
 
     <script>
@@ -128,7 +128,7 @@
 
                 if (user.role !== 'teacher') {
                     showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
-                    window.location.href = '../dashboard';
+                    window.location.href = 'dashboard';
                     return;
                 }
 
@@ -317,7 +317,7 @@
                 const result = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showToast('Sėkmingai atnaujinta!', 'success');
-                    setTimeout(() => { window.location.href = '../timetables'; }, 800);
+                    setTimeout(() => { window.location.href = 'timetables'; }, 800);
                 } else {
                     showToast(result.message || 'Nepavyko išsaugoti.', 'error');
                 }
@@ -343,7 +343,7 @@
                 const result = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showToast('Įrašas pašalintas.', 'success');
-                    setTimeout(() => { window.location.href = '../timetables'; }, 500);
+                    setTimeout(() => { window.location.href = 'timetables'; }, 500);
                 } else {
                     showToast(result.message || 'Nepavyko pašalinti.', 'error');
                 }

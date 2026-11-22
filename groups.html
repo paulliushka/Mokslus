@@ -21,7 +21,7 @@
             <h2>Mano grupės</h2>
 
             <div class="mb-20">
-                <a href="/creating/create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
+                <a href="create_group" class="btn btn-primary">+ Sukurti naują grupę</a>
             </div>
 
             <div class="groups-toolbar">
@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -74,7 +74,7 @@
 
             if (currentUser.role !== 'teacher') {
                 showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
-                setTimeout(() => { window.location.href = '/dashboard'; }, 1200);
+                setTimeout(() => { window.location.href = 'dashboard'; }, 1200);
                 return;
             }
 
@@ -206,7 +206,7 @@
                 actions.className = 'group-actions';
 
                 const editLink = document.createElement('a');
-                editLink.href = `/editing/edit_group?id=${encodeURIComponent(g.group_id)}`;
+                editLink.href = `edit_group?id=${encodeURIComponent(g.group_id)}`;
                 editLink.textContent = 'Redaguoti';
                 editLink.setAttribute('aria-label', `Redaguoti grupę ${g.group_name}`);
                 actions.appendChild(editLink);

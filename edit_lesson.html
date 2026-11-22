@@ -65,7 +65,7 @@
             </div>
         </div>
 
-        <a href="../lessons" class="btn-back">← Atgal į pamokų sąrašą</a>
+        <a href="lessons" class="btn-back">← Atgal į pamokų sąrašą</a>
     </div>
 
     <script>
@@ -92,13 +92,13 @@
 
                 if (user.role !== 'teacher') {
                     showToast('Puslapis pasiekiamas tik mokytojams.', 'error');
-                    window.location.href = '../dashboard';
+                    window.location.href = 'dashboard';
                     return;
                 }
 
                 if (!groupId || !dateStr) {
                     showToast('Nenurodyta data arba grupė.', 'error');
-                    setTimeout(() => { window.location.href = '../lessons'; }, 1500);
+                    setTimeout(() => { window.location.href = 'lessons'; }, 1500);
                     return;
                 }
 

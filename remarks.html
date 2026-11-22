@@ -101,7 +101,7 @@
             </div>
         </div>
 
-        <a href="/dashboard" class="btn-back">← Grįžti į pagrindinį</a>
+        <a href="dashboard" class="btn-back">← Grįžti į pagrindinį</a>
     </div>
 
     <script>
@@ -121,7 +121,7 @@
 
             if (currentUser.role !== 'teacher' && currentUser.role !== 'student') {
                 showToast('Puslapis pasiekiamas tik mokiniams ir mokytojams.', 'error');
-                window.location.href = '/dashboard';
+                window.location.href = 'dashboard';
                 return;
             }
 
@@ -384,7 +384,7 @@
 
                     if (canEdit) {
                         const editLink = document.createElement('a');
-                        editLink.href = `/editing/edit_remark?id=${encodeURIComponent(r.remark_id)}`;
+                        editLink.href = `edit_remark?id=${encodeURIComponent(r.remark_id)}`;
                         editLink.textContent = 'Redaguoti';
                         editLink.setAttribute('aria-label', 'Redaguoti įrašą');
                         actions.appendChild(editLink);

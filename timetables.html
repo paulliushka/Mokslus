@@ -301,7 +301,7 @@
                 card.classList.add('clickable');
                 card.title = isOwner ? 'Spauskite norėdami redaguoti' : 'Spauskite norėdami peržiūrėti';
                 card.addEventListener('click', () => {
-                    window.location.href = `editing/edit_timetable?timetable_id=${encodeURIComponent(t.timetable_id)}`;
+                    window.location.href = `edit_timetable?timetable_id=${encodeURIComponent(t.timetable_id)}`;
                 });
             }
 

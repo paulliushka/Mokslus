@@ -98,7 +98,7 @@
                 const user = await res.json();
 
                 document.getElementById('welcomeTitle').textContent =
-                    `Sveikas, ${user.name || ''} ${user.surname || ''}`.trim();
+                    `Sveiki, ${user.name || ''} ${user.surname || ''}`.trim();
 
                 const roleBadge = document.getElementById('roleBadge');
                 roleBadge.textContent = ROLE_LABELS[user.role] || user.role || '';

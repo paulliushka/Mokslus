@@ -55,7 +55,7 @@
             </form>
         </div>
 
-        <a href="../groups" class="btn-back">← Grįžti į grupes</a>
+        <a href="groups" class="btn-back">← Grįžti į grupes</a>
     </div>
 
     <script>
@@ -75,7 +75,7 @@
 
             if (currentUser.role !== 'teacher') {
                 showToast('Grupės gali kurti tik mokytojai.', 'error');
-                setTimeout(() => { window.location.href = '../dashboard'; }, 1200);
+                setTimeout(() => { window.location.href = 'dashboard'; }, 1200);
                 return;
             }
 
@@ -271,7 +271,7 @@
                 const result = await res.json().catch(() => ({}));
                 if (res.ok) {
                     showToast('Grupė sėkmingai sukurta!', 'success');
-                    setTimeout(() => { window.location.href = '../groups'; }, 600);
+                    setTimeout(() => { window.location.href = 'groups'; }, 600);
                 } else {
                     showToast(result.message || 'Nepavyko sukurti grupės.', 'error');
                 }
