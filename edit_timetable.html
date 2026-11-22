@@ -120,7 +120,7 @@
 
         async function init() {
             try {
-                const profileRes = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const profileRes = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!profileRes.ok) { window.location.href = '/'; return; }
                 const user = await profileRes.json();
                 currentUserId = Number(user.user_id);
@@ -153,9 +153,9 @@
         async function loadAllData() {
             try {
                 const [resGroups, resTeachers, resTt] = await Promise.all([
-                    fetch(`${API_URL}/api/groups`, { credentials: 'include' }),
-                    fetch(`${API_URL}/api/teachers`, { credentials: 'include' }),
-                    fetch(`${API_URL}/api/timetables`, { credentials: 'include' })
+                    fetch(`${API_URL}/groups`, { credentials: 'include' }),
+                    fetch(`${API_URL}/teachers`, { credentials: 'include' }),
+                    fetch(`${API_URL}/timetables`, { credentials: 'include' })
                 ]);
 
                 if (resGroups.status === 401 || resTeachers.status === 401 || resTt.status === 401) {
@@ -308,7 +308,7 @@
             btn.textContent = 'Saugoma...';
 
             try {
-                const res = await fetch(`${API_URL}/api/timetables/edit/${encodeURIComponent(timetableId)}`, {
+                const res = await fetch(`${API_URL}/timetables/edit/${encodeURIComponent(timetableId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -336,7 +336,7 @@
             if (!confirm(`Ar tikrai norite ištrinti tvarkaraščio įrašą „${groupName}“?`)) return;
 
             try {
-                const res = await fetch(`${API_URL}/api/timetables/delete/${encodeURIComponent(timetableId)}`, {
+                const res = await fetch(`${API_URL}/timetables/delete/${encodeURIComponent(timetableId)}`, {
                     method: 'DELETE',
                     credentials: 'include'
                 });

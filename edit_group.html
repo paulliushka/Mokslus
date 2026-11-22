@@ -97,7 +97,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
@@ -120,7 +120,7 @@
 
         async function initPage() {
             try {
-                const res = await fetch(`${API_URL}/api/groups/${encodeURIComponent(groupId)}`, { credentials: 'include' });
+                const res = await fetch(`${API_URL}/groups/${encodeURIComponent(groupId)}`, { credentials: 'include' });
                 if (res.status === 404) { showEmptyState(); return; }
                 if (res.status === 401) { window.location.href = '/'; return; }
                 if (!res.ok) throw new Error('bad status');
@@ -132,7 +132,7 @@
                 document.getElementById('group_name').value = group.group_name || '';
                 renderInfoPanel(group);
 
-                const classesResp = await fetch(`${API_URL}/api/classes`, { credentials: 'include' });
+                const classesResp = await fetch(`${API_URL}/classes`, { credentials: 'include' });
                 if (!classesResp.ok) throw new Error('classes bad status');
                 const classes = await classesResp.json();
 
@@ -337,7 +337,7 @@
             btn.textContent = 'Saugoma...';
 
             try {
-                const res = await fetch(`${API_URL}/api/groups/edit/${encodeURIComponent(groupId)}`, {
+                const res = await fetch(`${API_URL}/groups/edit/${encodeURIComponent(groupId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

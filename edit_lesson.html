@@ -86,7 +86,7 @@
 
         async function init() {
             try {
-                const profileRes = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const profileRes = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!profileRes.ok) { window.location.href = '/'; return; }
                 const user = await profileRes.json();
 
@@ -148,7 +148,7 @@
             try {
                 const [resStu, resJ] = await Promise.all([
                     fetch(`${API_URL}/get_students_by_group/${encodeURIComponent(groupId)}`, { credentials: 'include' }),
-                    fetch(`${API_URL}/api/lesson-journal/data?group_id=${encodeURIComponent(groupId)}&date=${encodeURIComponent(dateStr)}`, { credentials: 'include' })
+                    fetch(`${API_URL}/lesson-journal/data?group_id=${encodeURIComponent(groupId)}&date=${encodeURIComponent(dateStr)}`, { credentials: 'include' })
                 ]);
 
                 if (resStu.status === 401 || resJ.status === 401) { window.location.href = '/'; return; }
@@ -294,7 +294,7 @@
             }
 
             try {
-                const res = await fetch(`${API_URL}/api/lesson-journal/save-attendance`, {
+                const res = await fetch(`${API_URL}/lesson-journal/save-attendance`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -332,7 +332,7 @@
             if (!isAlreadyActive) btnElement.classList.add('active-grade');
 
             try {
-                const res = await fetch(`${API_URL}/api/lesson-journal/save-grade`, {
+                const res = await fetch(`${API_URL}/lesson-journal/save-grade`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -365,7 +365,7 @@
 
             const gradeVal = activeBtn.textContent;
             try {
-                const res = await fetch(`${API_URL}/api/lesson-journal/save-grade`, {
+                const res = await fetch(`${API_URL}/lesson-journal/save-grade`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -415,7 +415,7 @@
             updateSaveStatus();
 
             try {
-                const res = await fetch(`${API_URL}/api/lesson-journal/save`, {
+                const res = await fetch(`${API_URL}/lesson-journal/save`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

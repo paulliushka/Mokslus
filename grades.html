@@ -67,7 +67,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 const currentUser = await response.json();
 
@@ -92,7 +92,7 @@
 
         async function loadGrades() {
             try {
-                const response = await fetch(`${API_URL}/api/grades`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/grades`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (!response.ok) throw new Error('bad status');
                 const data = await response.json();
@@ -167,9 +167,6 @@
             });
         }
 
-        /**
-         * Užpildo lentelę tuščia būsena (kai nėra pažymių arba filtras nieko nerado).
-         */
         function renderTableEmpty(message, submessage) {
             const tbody = document.getElementById('gradesTableBody');
             tbody.replaceChildren();
@@ -200,9 +197,6 @@
             tbody.appendChild(tr);
         }
 
-        /**
-         * Užpildo lentelę realiais pažymiais (kai yra 1 dalykas arba filtras).
-         */
         function renderTableFlat(grades) {
             const tbody = document.getElementById('gradesTableBody');
             tbody.replaceChildren();
@@ -233,9 +227,6 @@
             });
         }
 
-        /**
-         * Užpildo skyrius pagal dalyką (kai yra 2+ dalykų).
-         */
         function renderBySubject(grades) {
             const container = document.getElementById('gradesBySubject');
             container.replaceChildren();
@@ -316,12 +307,6 @@
             });
         }
 
-        /**
-         * Pagrindinė atvaizdavimo funkcija.
-         * - Jei pažymių nėra → lentelė su empty-state
-         * - Jei 1 dalykas → lentelė plokščia (be skyrių)
-         * - Jei 2+ dalykų → skyriai pagal dalyką
-         */
         function renderGrades(grades) {
             const tableWrapper = document.getElementById('gradesTableWrapper');
             const bySubject = document.getElementById('gradesBySubject');
@@ -344,16 +329,13 @@
                 return;
             }
 
-            // Grupuojame pagal dalyką
             const uniqueSubjects = new Set(grades.map(g => g.group_display || 'Nežinomas dalykas'));
 
             if (uniqueSubjects.size <= 1) {
-                // Vienas dalykas (arba filtruota iki vieno) - plokščia lentelė
                 tableWrapper.classList.remove('d-none');
                 bySubject.classList.add('d-none');
                 renderTableFlat(grades);
             } else {
-                // Keli dalykai - skyriai pagal dalyką
                 tableWrapper.classList.add('d-none');
                 bySubject.classList.remove('d-none');
                 renderBySubject(grades);

@@ -105,7 +105,7 @@
 
         async function checkAuthAndInit() {
             try {
-                const response = await fetch(`${API_URL}/api/profile`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/profile`, { credentials: 'include' });
                 if (!response.ok) { window.location.href = '/'; return; }
                 currentUser = await response.json();
 
@@ -134,7 +134,7 @@
 
         async function loadUser() {
             try {
-                const response = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`, { credentials: 'include' });
+                const response = await fetch(`${API_URL}/users/${encodeURIComponent(userId)}`, { credentials: 'include' });
                 if (response.status === 401) { window.location.href = '/'; return; }
                 if (response.status === 404) { showEmptyState(); return; }
                 if (!response.ok) throw new Error('bad status');
@@ -166,7 +166,7 @@
 
         async function checkIfLastAdmin() {
             try {
-                const res = await fetch(`${API_URL}/api/users`, { credentials: 'include' });
+                const res = await fetch(`${API_URL}/users`, { credentials: 'include' });
                 if (!res.ok) return;
                 const users = await res.json();
                 const adminCount = (users || []).filter(u => u.role === 'administrator').length;
@@ -262,7 +262,7 @@
             btn.textContent = 'Saugoma...';
 
             try {
-                const res = await fetch(`${API_URL}/api/users/edit/${encodeURIComponent(userId)}`, {
+                const res = await fetch(`${API_URL}/users/edit/${encodeURIComponent(userId)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
